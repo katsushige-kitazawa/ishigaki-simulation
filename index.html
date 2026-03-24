@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>石垣島 社会シミュレーション</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Noto Sans JP',sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#0d1b2e,#0d3050);padding:10px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #30363d;flex-shrink:0;height:50px}
+header h1{font-size:16px;font-weight:700;color:#58a6ff}
+header .meta{font-size:11px;color:#8b949e}
+.weather-badge{margin-left:auto;font-size:11px;color:#ffd700;background:rgba(255,215,0,.08);padding:3px 10px;border-radius:12px;border:1px solid rgba(255,215,0,.2)}
+.stats-bar{display:flex;gap:12px;margin-left:auto;margin-right:8px}
+.stat-pill{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid;display:flex;align-items:center;gap:4px}
+.stat-pill.local{color:#3fb950;background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.25)}
+.stat-pill.migrant{color:#d2a8ff;background:rgba(210,168,255,.08);border-color:rgba(210,168,255,.25)}
+.stat-pill.tourist{color:#ffa657;background:rgba(255,166,87,.08);border-color:rgba(255,166,87,.25)}
+
+/* ── Layout ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:260px;background:#161b22;border-right:1px solid #30363d;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.filter-tabs{display:flex;border-bottom:1px solid #30363d;flex-shrink:0}
+.filter-tab{flex:1;padding:8px 4px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:#8b949e;border-bottom:2px solid transparent;transition:all .2s}
+.filter-tab.active{color:#e6edf3;border-bottom-color:#58a6ff}
+.filter-tab:hover:not(.active){color:#c9d1d9}
+.agent-count{font-size:10px;opacity:.7;margin-left:2px}
+.search-bar{padding:8px 12px;border-bottom:1px solid #30363d;flex-shrink:0}
+.search-bar input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:5px 10px;font-size:12px;outline:none}
+.search-bar input:focus{border-color:#58a6ff}
+.agent-list{overflow-y:auto;flex:1}
+
+/* Agent card */
+.agent-card{padding:10px 12px;border-bottom:1px solid #21262d;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px}
+.agent-card:hover{background:#1c2128}
+.agent-card.active{background:#1c2128;border-left:3px solid var(--c)}
+.agent-emoji{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.agent-card-body{flex:1;min-width:0}
+.card-top{display:flex;align-items:baseline;gap:5px}
+.card-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-age{font-size:10px;color:#8b949e}
+.card-job{font-size:11px;color:#8b949e;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title{font-size:11px;color:#c9d1d9;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-loc{font-size:10px;color:#8b949e;margin-top:2px;display:flex;align-items:center;gap:4px}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--c);flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.card-buy{font-size:10px;color:#ffa657;margin-top:2px}
+
+/* ── Map ── */
+.map-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#map{flex:1}
+
+/* ── Timeline bar ── */
+.timeline-panel{background:#161b22;border-top:1px solid #30363d;padding:14px 24px;flex-shrink:0}
+.tl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tl-title{font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.tl-current{font-size:13px;color:#58a6ff;font-weight:700;background:rgba(88,166,255,.1);padding:3px 12px;border-radius:12px;border:1px solid rgba(88,166,255,.25)}
+.tl-bar{position:relative;display:flex;align-items:center;justify-content:space-between}
+/* connector line */
+.tl-bar::before{content:'';position:absolute;top:50%;transform:translateY(-50%);left:28px;right:28px;height:2px;background:#30363d;z-index:0}
+.tl-slot{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:4px;min-width:72px}
+.tl-node{width:36px;height:36px;border-radius:50%;background:#21262d;border:2px solid #30363d;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .25s;position:relative}
+.tl-slot:hover .tl-node{border-color:#8b949e;background:#1c2128}
+.tl-slot.active .tl-node{border-color:#58a6ff;background:rgba(88,166,255,.15);box-shadow:0 0 14px rgba(88,166,255,.35)}
+.tl-slot .tl-label{font-size:11px;color:#8b949e;font-weight:600;text-align:center}
+.tl-slot.active .tl-label{color:#e6edf3}
+.tl-slot .tl-time{font-size:10px;color:#8b949e}
+.interact-dot{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#f0883e;border:2px solid #161b22}
+
+/* ── Detail panel ── */
+.detail-panel{width:320px;background:#161b22;border-left:1px solid #30363d;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transform:translateX(0);transition:width .3s,transform .3s}
+.detail-panel.hidden{width:0;overflow:hidden}
+.detail-header{padding:12px 14px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.detail-header .dh-title{font-size:12px;color:#8b949e;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.detail-close{cursor:pointer;color:#8b949e;font-size:16px;padding:2px 6px;border-radius:4px;border:1px solid #30363d;line-height:1}
+.detail-close:hover{background:#21262d;color:#e6edf3}
+.detail-body{overflow-y:auto;flex:1;padding:14px}
+
+/* Agent header in detail */
+.d-agent-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #30363d}
+.d-emo{width:48px;height:48px;border-radius:50%;border:2px solid var(--c);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.d-name{font-size:15px;font-weight:700}
+.d-job{font-size:11px;color:#8b949e;margin-top:2px}
+.d-type-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid var(--c);color:var(--c);background:rgba(0,0,0,.2);margin-top:4px}
+
+/* Purchase total */
+.buy-total{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.buy-total .label{font-size:11px;color:#8b949e}
+.buy-total .amount{font-size:16px;font-weight:700;color:#ffa657}
+
+/* Vertical timeline */
+.vtl{display:flex;flex-direction:column;gap:4px}
+.vtl-item{border-radius:8px;border:1px solid #21262d;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.vtl-item:hover{border-color:#30363d}
+.vtl-item.active-slot{border-color:#58a6ff}
+.vtl-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.vtl-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.vtl-info{flex:1;min-width:0}
+.vtl-time{font-size:10px;color:#8b949e}
+.vtl-slot-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.vtl-loc{font-size:10px;color:#8b949e;margin-top:1px}
+.vtl-item.active-slot .vtl-slot-title{color:#58a6ff}
+.vtl-expand{padding:0 10px 10px 10px;border-top:1px dashed #30363d;margin-top:2px;display:none}
+.vtl-item.active-slot .vtl-expand{display:block}
+.vtl-action{font-size:12px;color:#c9d1d9;line-height:1.7;margin-top:8px}
+.vtl-buys{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.buy-item{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 8px;background:#0d1117;border-radius:5px}
+.buy-item .b-emo{font-size:13px}
+.buy-item .b-name{flex:1;color:#c9d1d9}
+.buy-item .b-price{color:#ffa657;font-weight:600;white-space:nowrap}
+.vtl-interact{margin-top:8px;padding:8px;background:rgba(240,136,62,.05);border:1px solid rgba(240,136,62,.2);border-radius:6px}
+.vtl-interact .i-label{font-size:10px;color:#f0883e;font-weight:600;margin-bottom:4px}
+.vtl-dialogue{font-size:11px;color:#c9d1d9;line-height:1.8;white-space:pre-line}
+
+/* Leaflet custom */
+.leaflet-popup-content-wrapper{background:#161b22;border:1px solid #30363d;border-radius:8px;color:#e6edf3;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.leaflet-popup-tip{background:#161b22}
+.leaflet-popup-content{margin:10px 13px}
+.popup-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.popup-loc{font-size:11px;color:#8b949e;margin-bottom:3px}
+.popup-t{font-size:12px;color:#c9d1d9}
+.popup-buy{font-size:11px;color:#ffa657;margin-top:4px}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:20px">🏝️</span>
+  <h1>石垣島 社会シミュレーション</h1>
+  <span class="meta">2026年3月23日（月）　30人のエージェント</span>
+  <div class="stats-bar">
+    <span class="stat-pill local">🏠 地元民 <span id="cnt-local">12</span></span>
+    <span class="stat-pill migrant">🌱 移住者 <span id="cnt-migrant">6</span></span>
+    <span class="stat-pill tourist">✈️ 観光客 <span id="cnt-tourist">12</span></span>
+  </div>
+  <span class="weather-badge">☀️ 晴れ・25℃・南風</span>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="filter-tabs">
+      <div class="filter-tab active" data-type="all" onclick="setFilter('all',this)">全員<span class="agent-count">30</span></div>
+      <div class="filter-tab" data-type="local" onclick="setFilter('local',this)">地元民<span class="agent-count">12</span></div>
+      <div class="filter-tab" data-type="migrant" onclick="setFilter('migrant',this)">移住者<span class="agent-count">6</span></div>
+      <div class="filter-tab" data-type="tourist" onclick="setFilter('tourist',this)">観光客<span class="agent-count">12</span></div>
+    </div>
+    <div class="search-bar"><input id="searchInput" placeholder="🔍 名前・職業で検索" oninput="renderList()"></div>
+    <div class="agent-list" id="agentList"></div>
+  </div>
+
+  <!-- Map + Timeline -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="timeline-panel">
+      <div class="tl-header">
+        <span class="tl-title">⏰ タイムライン</span>
+        <span class="tl-current" id="tlCurrentLabel"></span>
+      </div>
+      <div class="tl-bar" id="tlBar"></div>
+    </div>
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-panel hidden" id="detailPanel">
+    <div class="detail-header">
+      <span class="dh-title">エージェント詳細</span>
+      <span class="detail-close" onclick="selectAgent(null)">✕</span>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const SLOTS = [
+  {id:0,icon:'🌅',label:'早朝',time:'6-8時'},
+  {id:1,icon:'☀️',label:'午前',time:'9-12時'},
+  {id:2,icon:'🌞',label:'昼',time:'12-14時'},
+  {id:3,icon:'🌤️',label:'午後',time:'14-17時'},
+  {id:4,icon:'🌇',label:'夕方',time:'17-19時'},
+  {id:5,icon:'🌙',label:'夜',time:'19-21時'},
+];
+
+const LOCS = {
+  port:      {n:'石垣漁港',            lat:24.3430,lng:124.1870},
+  ferry:     {n:'離島ターミナル',        lat:24.3380,lng:124.1890},
+  market:    {n:'公設市場',             lat:24.3365,lng:124.1920},
+  euglena:   {n:'ユーグレナモール',      lat:24.3364,lng:124.1918},
+  soba:      {n:'島そば一番地',          lat:24.3340,lng:124.1920},
+  hitoshi:   {n:'居酒屋ひとし',          lat:24.3376,lng:124.1876},
+  cafe_yui:  {n:'Cafe＆Bar Yui',        lat:24.3382,lng:124.1893},
+  tacos:     {n:'タコス屋 QueRico',      lat:24.3339,lng:124.1920},
+  gurukun:   {n:'居酒屋 珊瑚',          lat:24.3372,lng:124.1905},
+  market_din:{n:'市場食堂',             lat:24.3366,lng:124.1921},
+  maxvalu:   {n:'マックスバリュ',        lat:24.3277,lng:124.2025},
+  drugstore: {n:'ドラッグストア',        lat:24.3278,lng:124.2020},
+  souvenir:  {n:'お土産店 島宝',         lat:24.3385,lng:124.1896},
+  beach:     {n:'真栄里ビーチ',          lat:24.3250,lng:124.2050},
+  hospital:  {n:'八重山病院',           lat:24.3280,lng:124.2028},
+  city_hall: {n:'石垣市役所',           lat:24.3265,lng:124.2035},
+  school:    {n:'石垣小学校',           lat:24.3350,lng:124.1960},
+  guesthouse:{n:'ゲストハウス（登野城）', lat:24.3480,lng:124.1900},
+  hotel:     {n:'ホテル（市内）',        lat:24.3390,lng:124.1895},
+  home:      {n:'市内住宅地',           lat:24.3420,lng:124.1950},
+  home_fish: {n:'漁師町住宅地',          lat:24.3450,lng:124.1880},
+  famima:    {n:'ファミリーマート',       lat:24.3400,lng:124.1900},
+};
+
+// type color
+const TC = {local:'#3fb950', migrant:'#d2a8ff', tourist:'#ffa657'};
+const TL = {local:'地元民', migrant:'移住者', tourist:'観光客'};
+
+// INTERACTIONS [slotId -> {agents, loc, ctx, dialogue}]
+const INTS = {
+  2:{agents:['tanaka','suzuki'],loc:'market_din',ctx:'港近くの食堂で偶然隣席に',
+    dialogue:`田中健一:「それはグルクンだよ。今朝俺が獲ってきた」\n鈴木美咲:「え、今朝ですか！？めっちゃ美味しいです」\n田中健一:「もう三十年漁師やっとるよ。川平より朝の市場の方が本物だけどな」\n鈴木美咲:「絶対行きます！明日の朝一で」`},
+  4:{agents:['suzuki','yamada'],loc:'guesthouse',ctx:'帰り道でゲストハウスの看板を見つけ立ち寄る',
+    dialogue:`鈴木美咲:「明日から泊まれますか？」\n山田拓海:「ちょうど空いてますよ。川平帰りですか？顔が日焼けしてる（笑）」\n鈴木美咲:「夜ごはんのおすすめも教えてほしいんですが」\n山田拓海:「それなら一緒に行きますよ。今夜自分も行くとこだったので」`},
+  5:{agents:['tanaka','yamada'],loc:'hitoshi',ctx:'行きつけの居酒屋で偶然同席',
+    dialogue:`田中健一:「最近また港の近くにリゾートホテルができるらしいな」\n山田拓海:「あそこ昔は地元の人の駐車場でしたよね」\n田中健一:「島が島じゃなくなっていく感じがしてよ」\n山田拓海:「俺も移住してきた身だから言いにくいんですけど……田中さんに根張ってると言ってもらえると救われます」`},
+};
+
+// ─── 30 AGENTS ───────────────────────────────────────────
+const AGENTS = [
+// ── 地元民 ───────────────────────────────────────────────
+{id:'tanaka',name:'田中健一',age:52,emoji:'🎣',type:'local',job:'漁師',
+ schedule:[
+  {loc:'port',     title:'早朝漁・グルクン豊漁',          action:'夜明け前から沖に出てグルクンとカーエーを水揚げした。観光ボートが増えて漁場が荒れてきている気がしてならないが、今日は豊漁だった。',buys:[]},
+  {loc:'market',   title:'公設市場で魚を卸す',            action:'公設市場の顔なじみ店主に魚を卸し、さんぴん茶を一本買って船の上で海を眺めた。',buys:[{e:'🍵',n:'さんぴん茶',p:130,s:'自販機'}]},
+  {loc:'market_din',title:'食堂でコーヒー休憩',           action:'港近くの食堂に寄り、隣席の東京の若い女性に「この魚は何ですか」と聞かれてグルクンの説明をした。珍しく長話になった。',buys:[{e:'☕',n:'コーヒー',p:350,s:'市場食堂'}]},
+  {loc:'port',     title:'漁船のメンテナンス',            action:'午後の日差しの中、木陰に軽トラを停めて船底を点検した。孫が来る前にひと眠りした。',buys:[]},
+  {loc:'home_fish',title:'孫を出迎え・帰宅',              action:'六時に孫の龍之介を迎えに小学校へ。軽トラの窓から夕日が海を染めるのを目の端で見ながら帰路についた。',buys:[{e:'🍺',n:'オリオンビール',p:320,s:'ファミリーマート'}]},
+  {loc:'hitoshi',  title:'居酒屋で常連と一杯',            action:'行きつけのひとしのカウンターで山田拓海と同席になった。最近の島の変化についてオリオンを飲みながら話した。',buys:[{e:'🍺',n:'オリオン生×2',p:1000,s:'居酒屋ひとし'},{e:'🐟',n:'刺し盛り',p:1200,s:'居酒屋ひとし'}]},
+]},
+{id:'aragaki',name:'新垣ハル',age:72,emoji:'🌺',type:'local',job:'主婦・農家',
+ schedule:[
+  {loc:'home',     title:'畑で野菜を収穫',                action:'夜明けとともに畑に出てゴーヤーとパパイヤを収穫した。南風が心地よく、一人で鼻歌を歌いながら作業した。',buys:[]},
+  {loc:'market',   title:'公設市場で野菜を売る',          action:'市場の常連の仲間と世間話しながら野菜を販売した。',buys:[{e:'🍱',n:'惣菜（自分用）',p:400,s:'市場内惣菜店'}]},
+  {loc:'soba',     title:'一人でそばランチ',              action:'島そば一番地でソーキそばを食べた。店主と孫の話で盛り上がった。',buys:[{e:'🍜',n:'ソーキそば',p:750,s:'島そば一番地'}]},
+  {loc:'drugstore',title:'薬局で薬・日用品を購入',        action:'膝の薬と孫用のシャンプーをドラッグストアで購入した。',buys:[{e:'💊',n:'膝の薬・日用品',p:2100,s:'ドラッグストア'}]},
+  {loc:'home',     title:'夕飯の支度',                   action:'畑の野菜でチャンプルーを作った。テレビのニュースを見ながら夕飯の支度をした。',buys:[]},
+  {loc:'home',     title:'テレビを見て就寝',              action:'九時のニュースを見て早めに床についた。明日も早起きだ。',buys:[]},
+]},
+{id:'miyara',name:'宮良次郎',age:45,emoji:'👔',type:'local',job:'石垣市役所職員',
+ schedule:[
+  {loc:'home',     title:'子どもを送り出す',              action:'子供たちに朝食を食べさせて学校に送り出した。妻と簡単に今日のスケジュールを確認した。',buys:[]},
+  {loc:'city_hall',title:'市役所で通常業務・観光会議',    action:'午前は文書処理、午後は観光振興部会の会議に出席した。',buys:[]},
+  {loc:'soba',     title:'同僚とそばランチ ¥800',         action:'同僚の宮城さんと島そば一番地で昼食。仕事の愚痴を言いながら笑い飛ばした。',buys:[{e:'🍜',n:'そばランチセット',p:800,s:'島そば一番地'}]},
+  {loc:'city_hall',title:'観光振興の午後会議',            action:'観光客数が増加する一方、漁業者から漁場への影響を懸念する声が届いており、対応策を協議した。',buys:[]},
+  {loc:'maxvalu',  title:'マックスバリュで夕飯の食材',    action:'仕事帰りにマックスバリュで夕飯の食材を購入した。',buys:[{e:'🛒',n:'夕飯食材一式',p:1800,s:'マックスバリュ'}]},
+  {loc:'home',     title:'家族と夕飯・読書',              action:'子供たちと夕飯を食べた後、来月の観光計画の資料を読み込んだ。',buys:[]},
+]},
+{id:'higa',name:'比嘉沙織',age:33,emoji:'👩‍⚕️',type:'local',job:'看護師（八重山病院）',
+ schedule:[
+  {loc:'hospital', title:'夜勤明けの引き継ぎ',            action:'深夜から朝にかけての夜勤を終え、日勤のスタッフに引き継ぎを行った。',buys:[]},
+  {loc:'famima',   title:'コンビニで朝食を買って帰宅',    action:'ファミリーマートで朝食を買い、そのまま帰宅した。今日は休みなので久しぶりにゆっくりできる。',buys:[{e:'🍙',n:'おにぎり・サンド',p:680,s:'ファミリーマート'}]},
+  {loc:'home',     title:'自宅で昼寝・休息',              action:'帰宅後すぐに横になり、昼過ぎまで眠った。久しぶりの深い眠りだった。',buys:[]},
+  {loc:'euglena',  title:'ユーグレナモールでリフレッシュ',action:'起きてからシャワーを浴び、気分転換にユーグレナモールをぶらついた。',buys:[{e:'👗',n:'Tシャツ',p:1800,s:'ユーグレナモール'}]},
+  {loc:'maxvalu',  title:'食材・ビール購入',              action:'久しぶりに手料理を作ろうと食材を買い込んだ。',buys:[{e:'🛒',n:'食材・飲み物',p:2300,s:'マックスバリュ'}]},
+  {loc:'home',     title:'自炊・明日の夜勤に備え就寝',    action:'ゴーヤーチャンプルーを作って食べた。明日は夜勤なので早めに就寝した。',buys:[]},
+]},
+{id:'ohama',name:'大浜和也',age:28,emoji:'🏪',type:'local',job:'スーパー店員',
+ schedule:[
+  {loc:'home',     title:'早起きで出勤準備',              action:'6時に起きてシャワーを浴び、朝食を食べて出勤の準備をした。',buys:[]},
+  {loc:'maxvalu',  title:'品出し・午前シフト',            action:'開店前の品出し作業。今日は週明けで搬入が多く、体を動かす時間が長かった。',buys:[{e:'🍱',n:'社員食堂弁当',p:380,s:'マックスバリュ（社割）'}]},
+  {loc:'maxvalu',  title:'休憩室でランチ',                action:'休憩室で昼食を食べながら、同僚と来週の休みの計画を話した。',buys:[]},
+  {loc:'euglena',  title:'退勤後モールをぶらつく',        action:'仕事終わりにユーグレナモールを一周した。特に買うものはなかったが、気分転換になった。',buys:[{e:'🍦',n:'アイスクリーム',p:350,s:'ユーグレナモール'}]},
+  {loc:'market',   title:'公設市場で夕飯の食材',          action:'市場で刺身と島野菜を買った。直接漁師から仕入れている鮮魚コーナーのカーエーを選んだ。',buys:[{e:'🐟',n:'刺身・島野菜',p:1200,s:'公設市場'}]},
+  {loc:'home',     title:'自宅で夕飯・ゆっくり',          action:'自炊して食べた後、読みかけの漫画を読んで就寝した。',buys:[]},
+]},
+{id:'ishigaki_c',name:'石垣智恵',age:60,emoji:'🍱',type:'local',job:'市場・惣菜店主',
+ schedule:[
+  {loc:'market',   title:'惣菜店の開店準備',              action:'5時半に市場に入り、仕込みを開始した。今日はチキナーの炒めものとジューシーを多めに作る予定だ。',buys:[{e:'🧅',n:'食材仕入れ',p:4500,s:'業者'}]},
+  {loc:'market',   title:'惣菜の調理・販売',              action:'常連のおばあたちや観光客に次々と売れた。「美味しい」と言ってもらえると疲れが飛ぶ。',buys:[]},
+  {loc:'market',   title:'店番・昼食',                   action:'客足が落ち着く昼は、自分の惣菜をつまみながら別の店主と情報交換した。',buys:[]},
+  {loc:'market',   title:'午後の販売・観光客対応',        action:'観光客にどれがおすすめかを英語まじりで説明した。スマホで翻訳アプリを使いながら。',buys:[]},
+  {loc:'market',   title:'閉店片付け',                   action:'残った惣菜を値引きして売り切り、片付けた。月曜の客の入りに一喜一憂した。',buys:[]},
+  {loc:'home',     title:'夕飯・明日の仕込み計画',        action:'自宅でテレビを見ながら翌日のメニューを考えた。',buys:[{e:'🛒',n:'食材（翌日用）',p:1500,s:'マックスバリュ'}]},
+]},
+{id:'nakama',name:'仲間圭一',age:38,emoji:'🔨',type:'local',job:'建設会社勤務',
+ schedule:[
+  {loc:'home_fish',title:'5時起き・現場へ',               action:'まだ暗いうちに起きて現場に向かった。今日は港湾施設の補修工事だ。',buys:[]},
+  {loc:'port',     title:'港湾施設の工事作業（午前）',    action:'港の岸壁補修工事。昨晩の波でコンクリートが一部剥がれており、想定より作業量が多かった。',buys:[]},
+  {loc:'famima',   title:'コンビニで昼飯',                action:'工事現場から一番近いファミリーマートで弁当とお茶を買って現場でランチ。',buys:[{e:'🍱',n:'弁当・お茶',p:820,s:'ファミリーマート'}]},
+  {loc:'port',     title:'午後の工事作業',                action:'炎天下の作業が続いた。夕方には今日分の補修がほぼ完了し、達成感があった。',buys:[]},
+  {loc:'home_fish',title:'帰宅・シャワー',                action:'汗だくで帰宅してシャワーを浴びた。体中が痛いがよく働いた。',buys:[]},
+  {loc:'gurukun',  title:'仕事仲間と居酒屋',              action:'現場仲間と珊瑚で一杯やった。今日の工事の出来栄えに満足しながらオリオンを空けた。',buys:[{e:'🍺',n:'ビール・つまみ',p:1800,s:'居酒屋 珊瑚'}]},
+]},
+{id:'shinjo',name:'新城みどり',age:25,emoji:'🎵',type:'local',job:'居酒屋アルバイト',
+ schedule:[
+  {loc:'home',     title:'遅めに起床・準備',              action:'昨夜のバイトで帰りが遅かったので、9時過ぎにゆっくり起きた。',buys:[]},
+  {loc:'euglena',  title:'ユーグレナモールでショッピング',action:'友人に誘われてモールへ。雑貨店で可愛いピアスを見つけた。',buys:[{e:'💎',n:'アクセサリー・雑貨',p:1500,s:'ユーグレナモール'}]},
+  {loc:'cafe_yui', title:'カフェでタコライスランチ',       action:'CaféBar Yuiのタコライスは石垣一美味しいと思っている。友人と食べながら次の旅行計画を話した。',buys:[{e:'🌮',n:'タコライス',p:980,s:'Cafe＆Bar Yui'}]},
+  {loc:'home',     title:'夜の仕事に備えて昼寝',          action:'夕方から居酒屋のバイトがあるので体力温存のため昼寝をした。',buys:[]},
+  {loc:'market',   title:'公設市場で夕飯前の惣菜購入',    action:'バイト前に小腹を満たすために市場で惣菜を買った。',buys:[{e:'🍱',n:'惣菜',p:600,s:'公設市場'}]},
+  {loc:'gurukun',  title:'居酒屋バイト',                  action:'居酒屋珊瑚で接客アルバイト。今日は珍しく観光客が多く、料理説明に英語を使う場面もあった。',buys:[]},
+]},
+{id:'sakiyama',name:'崎山正男',age:55,emoji:'🚕',type:'local',job:'タクシー運転手',
+ schedule:[
+  {loc:'ferry',    title:'ターミナルで観光客を拾う',      action:'朝のフェリーに合わせて離島ターミナルへ。観光客二人組をホテルに送った。',buys:[]},
+  {loc:'city_hall',title:'市内を流しながら乗客を待つ',   action:'市役所前でお客さんを拾って空港へ送った。帰りに市内を流した。',buys:[]},
+  {loc:'soba',     title:'行きつけのそば屋でランチ',      action:'一番地の主人とは長い付き合い。いつもの席でソーキそばを食べた。',buys:[{e:'🍜',n:'ソーキそば',p:750,s:'島そば一番地'}]},
+  {loc:'ferry',    title:'空港・市内の送迎',              action:'午後は空港からホテルへの送迎が二件あった。一件の観光客から石垣の穴場を聞かれて案内した。',buys:[]},
+  {loc:'famima',   title:'コンビニでコーヒー休憩',        action:'少し早上がりしてファミリーマートの駐車場でコーヒーを飲みながら一休みした。',buys:[{e:'☕',n:'缶コーヒー',p:160,s:'ファミリーマート'}]},
+  {loc:'home',     title:'帰宅・入浴・就寝',              action:'帰宅して風呂に入り、野球中継を見ながら缶ビールを一本飲んで寝た。',buys:[]},
+]},
+{id:'hirata',name:'平田真奈美',age:42,emoji:'📚',type:'local',job:'小学校教師',
+ schedule:[
+  {loc:'home',     title:'朝の準備・弁当作り',            action:'子供たちの弁当を作りながら自分も朝食を済ませた。今日は理科の実験がある。',buys:[]},
+  {loc:'school',   title:'授業・理科の実験',              action:'3年生の理科で島の生き物について調べる実験をした。子供たちが真剣に観察していた。',buys:[]},
+  {loc:'school',   title:'給食・職員室',                  action:'給食は今日のメニューがゴーヤーチャンプルーで、子供たちが「苦い！」と騒いでいた。',buys:[]},
+  {loc:'school',   title:'午後の授業・保護者連絡',        action:'5年生の算数を担当した後、来月の遠足の準備を進めた。',buys:[]},
+  {loc:'maxvalu',  title:'退勤後に買い物',                action:'帰り道にマックスバリュで夕飯の食材とおやつを買った。',buys:[{e:'🛒',n:'食材・お菓子',p:1600,s:'マックスバリュ'}]},
+  {loc:'home',     title:'夕飯・翌日の授業準備',          action:'夕飯後に翌日の授業プリントを作成した。',buys:[]},
+]},
+{id:'teruya',name:'照屋豊',age:67,emoji:'⛵',type:'local',job:'元漁師・民宿オーナー',
+ schedule:[
+  {loc:'home_fish',title:'早起き・宿の掃除',              action:'6時に起きて宿の共用スペースと庭を掃除した。宿泊客はまだ眠っている。',buys:[]},
+  {loc:'port',     title:'漁港で旧友と世間話',            action:'若い頃一緒に漁をした仲間と港で一時間ほど話した。海の話、昔の話。',buys:[]},
+  {loc:'market_din',title:'市場食堂で昼定食',             action:'市場の食堂で刺身定食を食べた。今日の魚は抜群に新鮮だった。',buys:[{e:'🐟',n:'刺身定食',p:900,s:'市場食堂'}]},
+  {loc:'home_fish',title:'宿のチェックイン対応',          action:'東京からの家族連れがチェックインした。石垣島の見どころを丁寧に説明した。',buys:[]},
+  {loc:'market',   title:'宿泊客へのお土産用に市場で買い物',action:'宿泊客へのもてなし用に市場で島産品を購入した。',buys:[{e:'🎁',n:'島の特産品（歓迎用）',p:3000,s:'公設市場'}]},
+  {loc:'home_fish',title:'宿泊客と縁側でゆんたく',        action:'夕食後、縁側で宿泊客と泡盛を飲みながら島の話をした。こういう時間が宿をやっていてよかったと思う瞬間だ。',buys:[]},
+]},
+{id:'toyokawa',name:'豊川裕子',age:35,emoji:'🌸',type:'local',job:'保育士',
+ schedule:[
+  {loc:'home',     title:'子どもを保育園に送る',          action:'自分の子供を同じ保育園に連れて行くという不思議な状況。先生と保護者が同じ人だ。',buys:[]},
+  {loc:'school',   title:'保育業務・園児のお世話',        action:'0〜2歳児クラスを担当。今日はお散歩に行き、猫を見つけた園児が大興奮だった。',buys:[]},
+  {loc:'school',   title:'園児と一緒に給食',              action:'給食を一緒に食べながら子供たちの様子を見守った。',buys:[]},
+  {loc:'school',   title:'午後の保育・保護者対応',        action:'お迎えに来た保護者と子供の成長について話した。',buys:[]},
+  {loc:'drugstore',title:'薬局で子供の日用品',            action:'帰り道のドラッグストアで子供用のシャンプーとオムツを購入した。',buys:[{e:'🧴',n:'子供の日用品',p:1200,s:'ドラッグストア'}]},
+  {loc:'home',     title:'夕飯・子どものお風呂',          action:'子供を風呂に入れて寝かしつけた後、ようやく自分の時間。ネットで旅行の情報を調べた。',buys:[]},
+]},
+
+// ── 移住者 ───────────────────────────────────────────────
+{id:'yamada',name:'山田拓海',age:34,emoji:'🏠',type:'migrant',job:'ゲストハウス経営（移住3年）',
+ schedule:[
+  {loc:'guesthouse',title:'宿の清掃・チェックアウト対応', action:'チェックアウトのお客さんを見送った後、部屋の掃除とシーツ交換をした。隣のおばあが野菜を持ってきてくれた。',buys:[]},
+  {loc:'market',   title:'公設市場で食材購入',            action:'宿の朝食用に島野菜と豆腐を買った。',buys:[{e:'🥬',n:'島野菜・島豆腐',p:800,s:'公設市場'}]},
+  {loc:'guesthouse',title:'隣のおばあの料理でランチ',     action:'縁側でゴーヤーチャンプルーをご馳走になりながら「東京に戻りたいと思ったことある？」と聞かれ、「ないですね」と答えた。',buys:[]},
+  {loc:'guesthouse',title:'チェックイン対応・SNS更新',    action:'15時に新規客が来てチェックイン。夕日スポットを教えた後、インスタ用の宿の写真を撮った。',buys:[]},
+  {loc:'ferry',    title:'離島ターミナルで夕日撮影',      action:'宿のInstagram用に夕日を撮りに行った。川平から帰ってきた東京の女性に声をかけられ、宿を案内した。',buys:[]},
+  {loc:'hitoshi',  title:'居酒屋で情報収集',              action:'ひとしで田中さんと同席になり島の変化について話した。こういう会話が東京では絶対なかった。',buys:[{e:'🍶',n:'泡盛・つまみ',p:2200,s:'居酒屋ひとし'}]},
+]},
+{id:'kimura',name:'木村エリカ',age:29,emoji:'☕',type:'migrant',job:'カフェオーナー（移住4年）',
+ schedule:[
+  {loc:'cafe_yui', title:'カフェの開店準備',              action:'7時に店に入り、コーヒーの仕込みとメニューボードの更新をした。今日は島バナナのスムージーを追加。',buys:[{e:'🧺',n:'食材仕入れ',p:3000,s:'業者・公設市場'}]},
+  {loc:'cafe_yui', title:'モーニング営業',                action:'常連の宮良さんや観光客が朝食に来た。今日は晴れているのでテラス席が人気だ。',buys:[]},
+  {loc:'cafe_yui', title:'ランチ営業・タコライス好評',    action:'タコライスとガパオライスが売り切れた。月曜なのに観光客が多かった。',buys:[]},
+  {loc:'cafe_yui', title:'カフェ午後の営業',              action:'午後は観光客のグループが多く入り、島のおすすめを聞かれることが多かった。',buys:[]},
+  {loc:'market',   title:'翌日の食材購入',                action:'市場で新鮮な野菜を仕入れた。市場のおばちゃんに今日の鮮魚情報を教えてもらった。',buys:[{e:'🥬',n:'野菜・果物',p:2000,s:'公設市場'}]},
+  {loc:'home',     title:'売上確認・SNS投稿',             action:'今日の売上を確認しながら、店のインスタに今日の料理写真を投稿した。反応が良かった。',buys:[]},
+]},
+{id:'sato',name:'佐藤雄介',age:41,emoji:'💻',type:'migrant',job:'フリーランスエンジニア（移住2年）',
+ schedule:[
+  {loc:'home',     title:'自宅でリモートワーク開始',      action:'8時にパソコンを開いてメールとSlackのチェックから始めた。東京のクライアントとの時差がないのが助かる。',buys:[]},
+  {loc:'home',     title:'オンライン会議・コーディング',  action:'午前はZoomで打ち合わせを二件こなした後、集中してコーディング作業をした。',buys:[]},
+  {loc:'cafe_yui', title:'カフェでランチ兼作業',          action:'Cafe Bar Yuiに移動して、タコライスを食べながら作業を続けた。カフェの雰囲気が好きで週3回は来る。',buys:[{e:'🌮',n:'タコライス・コーヒー',p:1500,s:'Cafe＆Bar Yui'}]},
+  {loc:'cafe_yui', title:'カフェで午後作業',              action:'コード作業が順調に進んだ。窓の外の海が見えると集中力が上がる気がする。',buys:[{e:'☕',n:'コーヒー追加',p:450,s:'Cafe＆Bar Yui'}]},
+  {loc:'maxvalu',  title:'スーパーで買い物',              action:'夕飯の食材とビールを買った。石垣に来てから自炊が増えた。',buys:[{e:'🛒',n:'夕飯食材・ビール',p:2000,s:'マックスバリュ'}]},
+  {loc:'home',     title:'自炊・夕方ミーティング',        action:'東京のチームとビデオ会議の後、自炊した。ゴーヤーチャンプルーがだいぶ上手くなってきた。',buys:[]},
+]},
+{id:'nakajima',name:'中島彩',age:27,emoji:'🤿',type:'migrant',job:'ダイビングインストラクター（移住2年）',
+ schedule:[
+  {loc:'port',     title:'器材点検・午前ツアー準備',      action:'ダイビングショップで器材の点検をした。今日は午前2組・午後1組のツアーが入っている。',buys:[{e:'🔧',n:'器材消耗品',p:1500,s:'業者'}]},
+  {loc:'port',     title:'午前ダイビングツアー引率',      action:'東京からのカップルとビーチエントリーのファンダイブをした。透明度が20m超えで最高のコンディション。',buys:[]},
+  {loc:'gurukun',  title:'ツアー後のランチ',              action:'仕事仲間と居酒屋珊瑚でランチ定食を食べた。今日の海の話で盛り上がった。',buys:[{e:'🍽️',n:'定食',p:900,s:'居酒屋 珊瑚'}]},
+  {loc:'port',     title:'午後ツアー引率',                action:'午後は体験ダイビングで初めて海に潜るお客さんを案内した。',buys:[]},
+  {loc:'drugstore',title:'コスメ・日用品購入',            action:'仕事後にドラッグストアで化粧品を買った。',buys:[{e:'💄',n:'コスメ・日用品',p:2500,s:'ドラッグストア'}]},
+  {loc:'home',     title:'自宅でストレッチ・早寝',        action:'毎日体を使う仕事なのでストレッチを丁寧にしてから就寝した。明日も早い。',buys:[]},
+]},
+{id:'harada',name:'原田俊',age:36,emoji:'🌾',type:'migrant',job:'サトウキビ農家（移住3年）',
+ schedule:[
+  {loc:'home',     title:'夜明けから畑仕事',              action:'日が出る前から畑に出た。今日はサトウキビの成長具合をチェックして追肥の準備をした。',buys:[]},
+  {loc:'home',     title:'午前の農作業',                  action:'午前中ずっと農作業。汗びっしょりになりながら草刈り機を動かした。',buys:[{e:'⛽',n:'燃料・農薬',p:4000,s:'農業資材店'}]},
+  {loc:'famima',   title:'コンビニで昼飯',                action:'農作業の休憩でファミリーマートへ。おにぎりとお茶を買って畑の木陰で食べた。',buys:[{e:'🍙',n:'おにぎり・お茶',p:540,s:'ファミリーマート'}]},
+  {loc:'market',   title:'市場に野菜を納品',              action:'自家栽培の島野菜を市場に納品した。石垣智恵さんの惣菜店にも食材を卸した。',buys:[]},
+  {loc:'home',     title:'帰宅・シャワー',                action:'農作業の後のシャワーは格別だ。体の節々が疲れているが充実感がある。',buys:[]},
+  {loc:'home',     title:'自炊・早寝',                    action:'自分で育てた野菜と豆腐でシンプルな夕食を作った。明日も早いので21時に就寝した。',buys:[{e:'🛒',n:'食材補充',p:900,s:'マックスバリュ'}]},
+]},
+{id:'yoshida',name:'吉田麻里',age:31,emoji:'💅',type:'migrant',job:'ネイルサロン経営（移住4年）',
+ schedule:[
+  {loc:'home',     title:'ゆっくり起床・準備',            action:'8時にゆっくり起きて、オーガニックコーヒーを淹れながら今日の予約確認をした。',buys:[]},
+  {loc:'home',     title:'ネイルサロン開店・施術',        action:'自宅兼サロンで施術を開始。午前は地元客2名のケアをした。',buys:[]},
+  {loc:'cafe_yui', title:'カフェでランチ',                action:'昼休みにCafe Bar Yuiへ。アボカドプレートを食べながらSNSをチェックした。',buys:[{e:'🥑',n:'アボカドプレート',p:1100,s:'Cafe＆Bar Yui'}]},
+  {loc:'home',     title:'午後の施術',                   action:'午後は観光客の方が予約を入れてくれていた。インスタを見て予約してくれたようだ。',buys:[]},
+  {loc:'euglena',  title:'ユーグレナモールで買い物',      action:'仕事後にモールで服と雑貨を買った。移住して生活コストが下がった分、少し好きなものを買える。',buys:[{e:'👗',n:'服・雑貨',p:4500,s:'ユーグレナモール'}]},
+  {loc:'hitoshi',  title:'友人と居酒屋',                  action:'移住者仲間と居酒屋ひとしへ。移住生活の悩みと喜びを分かち合いながら泡盛を飲んだ。',buys:[{e:'🍶',n:'ドリンク・料理',p:2500,s:'居酒屋ひとし'}]},
+]},
+
+// ── 観光客 ───────────────────────────────────────────────
+{id:'suzuki',name:'鈴木美咲',age:27,emoji:'📸',type:'tourist',job:'東京IT企業勤務（3泊4日・一人旅）',
+ schedule:[
+  {loc:'hotel',    title:'朝日を撮影・SNS投稿',           action:'目覚ましより早く目が覚め、ベランダで朝日の写真を撮った。インスタのストーリーに投稿すると反応が良かった。',buys:[]},
+  {loc:'market',   title:'公設市場で朝ごはん',            action:'公設市場でソーキそばを食べた。隣のおばちゃんに川平湾の行き方を聞いたら30分しゃべり続けてくれた。',buys:[{e:'🍜',n:'ソーキそば',p:800,s:'公設市場'}]},
+  {loc:'beach',    title:'真栄里ビーチでシュノーケル',    action:'シュノーケルセットをレンタルして海に入った。熱帯魚がすぐそこにいて水中で声が出た。',buys:[{e:'🤿',n:'シュノーケルレンタル',p:3000,s:'ビーチショップ'},{e:'🧊',n:'かき氷',p:600,s:'ビーチ売店'}]},
+  {loc:'souvenir', title:'お土産店で大人買い',            action:'ターミナル周辺のお土産屋で泡盛と島コスメを買い込んだ。友達への土産は気前よく。',buys:[{e:'🍶',n:'泡盛・島コスメ',p:5500,s:'お土産店 島宝'}]},
+  {loc:'ferry',    title:'離島ターミナルで夕日',          action:'スマホをバッグに入れて、夕日が沈む瞬間を目だけで見ることにした。「言葉にならん」とインスタに書いた。',buys:[]},
+  {loc:'gurukun',  title:'居酒屋でグルクン料理',          action:'田中さんに教えてもらったお店でグルクン唐揚げを食べた。暖簾をくぐった瞬間の雰囲気に一瞬ひるんだがすぐに馴染めた。',buys:[{e:'🐟',n:'グルクン唐揚・泡盛',p:2800,s:'居酒屋 珊瑚'}]},
+]},
+{id:'takahashi',name:'高橋健太',age:32,emoji:'🏄',type:'tourist',job:'大阪会社員（友人4人グループ）',
+ schedule:[
+  {loc:'hotel',    title:'ホテルで朝食バイキング',        action:'ホテルのバイキングで腹いっぱい食べた。今日は釣りツアーの予約がある。',buys:[]},
+  {loc:'port',     title:'釣り体験ツアー',                action:'漁港から出るアジ釣りツアーに参加した。4人全員釣れて大盛り上がり。釣れた魚を食堂で調理してもらう予定。',buys:[{e:'🎣',n:'釣りツアー（4人）',p:20000,s:'ツアー会社'},{e:'🥤',n:'飲み物',p:500,s:'自販機'}]},
+  {loc:'market_din',title:'市場食堂で海鮮丼ランチ',      action:'釣り上げた魚を持ち込んで市場食堂で調理してもらった。自分で釣った魚は格別だと全員で感動した。',buys:[{e:'🍚',n:'海鮮丼（追加注文）',p:1500,s:'市場食堂'}]},
+  {loc:'beach',    title:'ビーチでのんびり',              action:'真栄里ビーチに移動してシュノーケルを楽しんだ。',buys:[{e:'🤿',n:'シュノーケルレンタル（4人）',p:8000,s:'ビーチショップ'},{e:'🍦',n:'アイスクリーム',p:1600,s:'ビーチ売店'}]},
+  {loc:'souvenir', title:'お土産をまとめ買い',            action:'帰りにまとめてお土産を買い込んだ。泡盛と黒糖を大量購入。',buys:[{e:'🎁',n:'お土産・泡盛',p:8000,s:'お土産店 島宝'}]},
+  {loc:'hitoshi',  title:'ひとしで豪快に打ち上げ',        action:'ひとしに並んで入店した。マグロが絶品で4人全員が感動した。',buys:[{e:'🐟',n:'料理・泡盛・ビール',p:16000,s:'居酒屋ひとし'}]},
+]},
+{id:'nakamura',name:'中村由美',age:45,emoji:'👫',type:'tourist',job:'神奈川主婦（夫婦旅行）',
+ schedule:[
+  {loc:'hotel',    title:'朝食・夫と港周辺を散歩',        action:'ホテルの朝食の後、夫と二人で港周辺を散歩した。南風が気持ちよかった。',buys:[]},
+  {loc:'euglena',  title:'ユーグレナモールでお土産探し',  action:'ユーグレナモールで島の調味料とアクセサリーを購入した。',buys:[{e:'🎁',n:'島の調味料・雑貨',p:3500,s:'ユーグレナモール'}]},
+  {loc:'soba',     title:'夫婦でそばランチ',              action:'島そば一番地でソーキそばを二人でいただいた。夫が「東京でこれが食べたい」と言った。',buys:[{e:'🍜',n:'そば（2人分）',p:1600,s:'島そば一番地'}]},
+  {loc:'market',   title:'公設市場でお土産',              action:'公設市場で島産品をじっくり選んだ。',buys:[{e:'🛍️',n:'島産品いろいろ',p:6000,s:'公設市場'}]},
+  {loc:'cafe_yui', title:'カフェでひと休み',              action:'歩き疲れてCafe Bar Yuiでコーヒーと島バナナのスムージーを飲んだ。',buys:[{e:'☕',n:'コーヒー・スムージー',p:1400,s:'Cafe＆Bar Yui'}]},
+  {loc:'gurukun',  title:'夫婦で夕飯・グルクンコース',    action:'居酒屋珊瑚でコース料理を予約していた。夫も大満足で「また来よう」と言った。',buys:[{e:'🍽️',n:'コース料理・泡盛',p:6000,s:'居酒屋 珊瑚'}]},
+]},
+{id:'ito',name:'伊藤洋平',age:38,emoji:'💼',type:'tourist',job:'福岡ビジネスマン（出張後の一人観光）',
+ schedule:[
+  {loc:'hotel',    title:'早朝ランニング・海岸沿い',      action:'6時から港周辺を5kmランニングした。',buys:[]},
+  {loc:'city_hall',title:'取引先への挨拶（仕事）',        action:'午前中に市内の取引先に挨拶回りをした。午後は完全に観光モードへ切り替える。',buys:[]},
+  {loc:'cafe_yui', title:'カフェでランチ・仕事も少し',    action:'タコライスを食べながらメールを処理して仕事を終わりにした。',buys:[{e:'🌮',n:'タコライス・コーヒー',p:1400,s:'Cafe＆Bar Yui'}]},
+  {loc:'ferry',    title:'フェリーで竹富島日帰り',        action:'午後のフェリーで竹富島へ。水牛車に乗って集落を巡った。',buys:[{e:'⛴️',n:'フェリー往復',p:600,s:'ターミナル'},{e:'🐃',n:'水牛車',p:1200,s:'竹富島'}]},
+  {loc:'ferry',    title:'石垣島に戻る',                  action:'夕方のフェリーで戻ってきた。竹富島の夕日を船から見た。',buys:[]},
+  {loc:'gurukun',  title:'一人でしっぽり飲む',            action:'地元の人たちが多い居酒屋を選んで一人で飲んだ。隣のおじさんに話しかけられた。',buys:[{e:'🍶',n:'刺し・泡盛',p:2500,s:'居酒屋 珊瑚'}]},
+]},
+{id:'watanabe',name:'渡辺リカ',age:22,emoji:'🌊',type:'tourist',job:'大学生（卒業旅行グループ4人）',
+ schedule:[
+  {loc:'hotel',    title:'女子4人でゆっくり朝',           action:'昨夜遅くまで話していたので9時まで寝ていた。朝ごはんはホテルで食べた。',buys:[]},
+  {loc:'beach',    title:'ビーチ・インスタ撮影大会',      action:'真栄里ビーチで写真を撮りまくった。4人全員インスタにあげた。',buys:[{e:'👙',n:'日焼け止め追加購入',p:800,s:'ビーチ売店'}]},
+  {loc:'tacos',    title:'タコス専門店でランチ',          action:'QueRicoのタコスが絶品で4人全員お代わりした。',buys:[{e:'🌮',n:'タコス・ドリンク',p:4800,s:'タコス屋 QueRico'}]},
+  {loc:'euglena',  title:'モールで女子ショッピング',      action:'ユーグレナモールでアクセサリーやリゾートウェアを買い込んだ。',buys:[{e:'💎',n:'アクセサリー・ウェア',p:3500,s:'ユーグレナモール'}]},
+  {loc:'souvenir', title:'ちんすこうなどお土産購入',      action:'ちんすこうと塩を大量購入。帰ってからのバイト先への配布用。',buys:[{e:'🍬',n:'ちんすこう・塩',p:2000,s:'お土産店 島宝'}]},
+  {loc:'hitoshi',  title:'卒業旅行の打ち上げ',            action:'ひとしで卒業旅行の打ち上げ。4人でマグロとビールで乾杯した。',buys:[{e:'🥂',n:'料理・カクテル（4人）',p:14000,s:'居酒屋ひとし'}]},
+]},
+{id:'kobayashi',name:'小林慎吾',age:55,emoji:'⛳',type:'tourist',job:'横浜会社役員（ゴルフ仲間と）',
+ schedule:[
+  {loc:'hotel',    title:'ホテルのレストランで朝食',      action:'会社の同僚3人と高級ホテルのレストランで朝食を取った。',buys:[]},
+  {loc:'hotel',    title:'ゴルフ・午前ラウンド',          action:'ホテル提携のゴルフ場でプレーした。',buys:[]},
+  {loc:'hotel',    title:'ゴルフ場レストランでランチ',    action:'ゴルフ場のレストランでステーキランチを食べた。',buys:[{e:'🥩',n:'ステーキランチ（4人）',p:14000,s:'ゴルフ場レストラン'}]},
+  {loc:'ferry',    title:'竹富島でガラス工房体験',        action:'フェリーで竹富島へ。ガラス工房で吹きガラス体験をした。',buys:[{e:'⛴️',n:'フェリー往復',p:1200,s:'ターミナル'},{e:'🏺',n:'ガラス工房体験',p:4500,s:'ガラス工房'}]},
+  {loc:'hotel',    title:'ホテルのスパ',                  action:'ホテルのスパで疲れを癒した。',buys:[{e:'🛁',n:'スパ',p:5000,s:'ホテルスパ'}]},
+  {loc:'gurukun',  title:'高級居酒屋で古酒コース',        action:'一番いい居酒屋のコースを予約していた。',buys:[{e:'🍽️',n:'コース料理・古酒（4人）',p:48000,s:'居酒屋 珊瑚'}]},
+]},
+{id:'kato',name:'加藤ひな',age:24,emoji:'🎒',type:'tourist',job:'フリーター・バックパッカー',
+ schedule:[
+  {loc:'guesthouse',title:'ゲストハウスで他旅人と朝話',  action:'ゲストハウスのリビングで昨日出会った韓国人バックパッカーと英語で話した。',buys:[]},
+  {loc:'market',   title:'市場で格安朝ごはん',            action:'公設市場の惣菜を買ってその場でつまんだ。全部で500円以内。',buys:[{e:'🍱',n:'惣菜・ジュース',p:500,s:'公設市場'}]},
+  {loc:'tacos',    title:'タコスでランチ',                action:'QueRicoのタコスはコスパ最高だと思う。移住者の木村さんに教えてもらった店だ。',buys:[{e:'🌮',n:'タコス・コーラ',p:900,s:'タコス屋 QueRico'}]},
+  {loc:'beach',    title:'無料ビーチで読書・昼寝',        action:'お金をかけずに海を楽しむのが信条。砂浜で本を読みながら昼寝した。',buys:[]},
+  {loc:'famima',   title:'コンビニでビール・つまみ',      action:'コンビニでビールとスナックを買ってゲストハウスのテラスで飲んだ。',buys:[{e:'🍺',n:'ビール・スナック',p:650,s:'ファミリーマート'}]},
+  {loc:'guesthouse',title:'ゲストハウスで旅人交流',      action:'夜はゲストハウスのリビングに自然と人が集まって、旅の話で盛り上がった。',buys:[]},
+]},
+{id:'matsumoto',name:'松本康二',age:43,emoji:'📷',type:'tourist',job:'東京フリーカメラマン（撮影旅行）',
+ schedule:[
+  {loc:'ferry',    title:'早朝ターミナルで光を撮影',      action:'朝の光が港に差し込む瞬間を撮るために5時半にターミナルへ。理想的な光の条件だった。',buys:[]},
+  {loc:'port',     title:'漁港で漁師・漁船を撮影',        action:'漁港で水揚げ作業を撮影した。田中さんに声をかけると快く許可してくれた。',buys:[]},
+  {loc:'soba',     title:'そば屋で遅めのランチ',          action:'撮影で動き回った後、島そば一番地でソーキそばを食べた。',buys:[{e:'🍜',n:'ソーキそば',p:850,s:'島そば一番地'}]},
+  {loc:'beach',    title:'ビーチで撮影',                  action:'マジックアワーに備えてビーチで撮影した。',buys:[]},
+  {loc:'ferry',    title:'ターミナル周辺でマジックアワー撮影',action:'日没前後の光を捉えるために撮影を続けた。今日の一枚が撮れた気がする。',buys:[{e:'🥤',n:'飲み物',p:200,s:'自販機'}]},
+  {loc:'cafe_yui', title:'カフェで写真整理・軽食',        action:'Cafe Bar Yuiで今日の写真を整理した。コーヒーとケーキで一息ついた。',buys:[{e:'☕',n:'コーヒー・ケーキ',p:950,s:'Cafe＆Bar Yui'}]},
+]},
+{id:'inoue',name:'井上美代子',age:68,emoji:'👒',type:'tourist',job:'大阪・ご近所グループツアー',
+ schedule:[
+  {loc:'hotel',    title:'ゆっくりホテル朝食',            action:'ホテルのバイキングをゆっくりいただいた。今日はツアーで市内観光の予定だ。',buys:[]},
+  {loc:'euglena',  title:'ユーグレナモールでお土産大量購入',action:'島のコスメと工芸品を家族と友人の分まで購入した。ツアーガイドさんのおすすめをそのまま買った。',buys:[{e:'🎁',n:'島コスメ・工芸品',p:8000,s:'ユーグレナモール'}]},
+  {loc:'market',   title:'市場ツアー・昼食',              action:'ツアーで公設市場を見学。その後ツアー込みのランチを食べた。',buys:[{e:'🥤',n:'ジューシー（追加）',p:400,s:'公設市場'}]},
+  {loc:'souvenir', title:'お土産をさらに追加購入',        action:'孫へのお土産を追加で購入した。ちんすこうと泡盛の飴が喜ばれると確信している。',buys:[{e:'🍬',n:'菓子・泡盛・工芸品',p:15000,s:'お土産店 島宝'}]},
+  {loc:'hotel',    title:'ホテルに戻り休憩',              action:'足が少し疲れたのでホテルに戻って部屋でゆっくりした。',buys:[]},
+  {loc:'hotel',    title:'ホテルのレストランで夕食',      action:'ツアー込みのホテルレストランディナー。同じツアーの方と旅の感想を話した。',buys:[]},
+]},
+{id:'fujita',name:'藤田誠',age:35,emoji:'👨‍👩‍👧‍�',type:'tourist',job:'埼玉会社員（ファミリー旅行）',
+ schedule:[
+  {loc:'hotel',    title:'子どもたちとプール・朝食',      action:'子供たちがホテルのプールではしゃいでいるのを見守りながら朝食を食べた。',buys:[]},
+  {loc:'beach',    title:'家族でビーチ遊び',              action:'家族4人で真栄里ビーチへ。子供用の浮き輪をレンタルしてシュノーケルを楽しんだ。',buys:[{e:'🤿',n:'シュノーケル・浮き輪',p:4000,s:'ビーチショップ'},{e:'🧴',n:'日焼け止め',p:800,s:'ビーチ売店'}]},
+  {loc:'tacos',    title:'子どもに大人気のタコスランチ',  action:'子供たちがQueRicoのタコスが大好きで喜んだ。4人分でも値段が手頃で助かった。',buys:[{e:'🌮',n:'タコス・ジュース（4人）',p:3200,s:'タコス屋 QueRico'}]},
+  {loc:'souvenir', title:'家族でお土産ショッピング',      action:'子供たちがキャラクターグッズのお土産を選ぶのに時間がかかった。',buys:[{e:'🎁',n:'お菓子・キャラグッズ',p:5000,s:'お土産店 島宝'}]},
+  {loc:'maxvalu',  title:'スーパーでビール・つまみ購入',  action:'子供が寝た後のビールタイム用にスーパーで購入した。',buys:[{e:'🍺',n:'ビール・つまみ',p:1500,s:'マックスバリュ'}]},
+  {loc:'gurukun',  title:'家族で夕食',                   action:'居酒屋珊瑚で海鮮料理を楽しんだ。子供たちも魚料理を完食した。',buys:[{e:'🍽️',n:'海鮮・ビール・子供メニュー',p:8000,s:'居酒屋 珊瑚'}]},
+]},
+{id:'okada',name:'岡田若菜',age:30,emoji:'💍',type:'tourist',job:'京都在住（ハネムーン）',
+ schedule:[
+  {loc:'hotel',    title:'バルコニーで朝日・2人で',       action:'夫とバルコニーで朝日を見た。海の向こうに太陽が昇る瞬間を二人で静かに眺めた。',buys:[]},
+  {loc:'port',     title:'夫婦で体験ダイビング',          action:'漁港から出る体験ダイビングに2人で参加した。水中で目が合った瞬間が忘れられない。',buys:[{e:'🤿',n:'体験ダイビング（2人）',p:16000,s:'ダイビングショップ'}]},
+  {loc:'cafe_yui', title:'カフェで2人ランチ',             action:'ダイビングの後はCafe Bar Yuiでパスタとスムージー。',buys:[{e:'🍝',n:'パスタ・ドリンク（2人）',p:2800,s:'Cafe＆Bar Yui'}]},
+  {loc:'euglena',  title:'2人でショッピング',             action:'ユーグレナモールで夫婦揃いのアクセサリーを購入した。',buys:[{e:'💎',n:'アクセサリー・工芸品',p:12000,s:'ユーグレナモール'}]},
+  {loc:'ferry',    title:'サンセットクルーズ',            action:'ターミナルから出るサンセットクルーズに参加した。',buys:[{e:'⛴️',n:'サンセットクルーズ（2人）',p:6000,s:'クルーズ会社'}]},
+  {loc:'gurukun',  title:'記念ディナー（フルコース）',    action:'予約していた記念ディナー。シャンパンで乾杯した。',buys:[{e:'🥂',n:'フルコース・シャンパン（2人）',p:20000,s:'居酒屋 珊瑚'}]},
+]},
+{id:'nishimura',name:'西村翔',age:26,emoji:'🏄‍♂️',type:'tourist',job:'福岡在住（サーフィン目的・友人2人）',
+ schedule:[
+  {loc:'beach',    title:'早朝サーフィン',                action:'夜明けのうちに真栄里ビーチに入った。波は小さいが透明度が高く、気持ちよかった。',buys:[{e:'🏄',n:'ボードレンタル',p:2000,s:'ビーチショップ'}]},
+  {loc:'beach',    title:'午前もサーフィン続行',          action:'昼前まで波乗りを楽しんだ。友人も良い波に乗れて満足していた。',buys:[]},
+  {loc:'tacos',    title:'タコスでランチ',                action:'QueRicoのタコスでエネルギー補給。コーラと一緒に2個食べた。',buys:[{e:'🌮',n:'タコス・コーラ',p:1000,s:'タコス屋 QueRico'}]},
+  {loc:'euglena',  title:'サーフショップでお土産',        action:'ユーグレナモールにあるサーフショップで石垣島ブランドのTシャツを買った。',buys:[{e:'👕',n:'Tシャツ・ステッカー',p:3500,s:'ユーグレナモール'}]},
+  {loc:'famima',   title:'コンビニで補給',                action:'サーフィン後の空腹をコンビニで補給した。エナジードリンクが手放せない。',buys:[{e:'⚡',n:'エナジードリンク・おにぎり',p:600,s:'ファミリーマート'}]},
+  {loc:'hitoshi',  title:'ひとしで海の話で盛り上がる',   action:'ひとしで友人とマグロを食べた。隣のカウンターの地元のおじさんに波情報を教えてもらった。',buys:[{e:'🐟',n:'マグロ・ビール',p:2500,s:'居酒屋ひとし'}]},
+]},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentSlot = 0;
+let selectedId = null;
+let filterType = 'all';
+let map = null;
+let markers = {};
+let paths = {};
+let intLines = {};
+
+const agentMap = Object.fromEntries(AGENTS.map(a=>[a.id,a]));
+
+// ============================================================
+// MAP
+// ============================================================
+function initMap(){
+  map = L.map('map',{center:[24.337,124.191],zoom:15});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO',maxZoom:19
+  }).addTo(map);
+  // Location labels
+  Object.values(LOCS).forEach(loc=>{
+    L.marker([loc.lat,loc.lng],{
+      icon:L.divIcon({
+        className:'',
+        html:`<div style="background:rgba(20,30,45,.85);border:1px solid #3a4555;color:#7a8899;font-size:10px;padding:2px 6px;border-radius:3px;white-space:nowrap;pointer-events:none">${loc.n}</div>`,
+        iconAnchor:[0,0]
+      }),interactive:false
+    }).addTo(map);
+  });
+}
+
+function agentPos(agent){
+  const loc = LOCS[agent.schedule[currentSlot].loc];
+  const siblings = AGENTS.filter(a=>a.schedule[currentSlot].loc===agent.schedule[currentSlot].loc);
+  const idx = siblings.findIndex(a=>a.id===agent.id);
+  const n = siblings.length;
+  if(n===1) return [loc.lat,loc.lng];
+  const r = n<=4?0.0003:n<=8?0.0005:0.0008;
+  const angle = (2*Math.PI*idx)/n - Math.PI/2;
+  return [loc.lat+r*Math.sin(angle), loc.lng+r*Math.cos(angle)];
+}
+
+function agentIcon(agent){
+  const active = selectedId===agent.id;
+  const sz = active?42:30;
+  const glow = active?`box-shadow:0 0 16px ${agent.color?TC[agent.type]:'#fff'}88`:'';
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#1a2030;border:2px solid ${TC[agent.type]};display:flex;align-items:center;justify-content:center;font-size:${active?18:13}px;cursor:pointer;transition:all .2s;${glow}">${agent.emoji}</div>`,
+    iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
+  });
+}
+
+function updateMap(){
+  // remove all
+  Object.values(markers).forEach(m=>map.removeLayer(m));
+  markers={};
+  Object.values(paths).forEach(l=>map.removeLayer(l));
+  paths={};
+  Object.values(intLines).forEach(l=>map.removeLayer(l));
+  intLines={};
+
+  AGENTS.forEach(agent=>{
+    const pos=agentPos(agent);
+    const mk=L.marker(pos,{icon:agentIcon(agent),zIndexOffset:selectedId===agent.id?1000:0});
+    const sl=agent.schedule[currentSlot];
+    const loc=LOCS[sl.loc];
+    const buyStr=sl.buys.length?sl.buys.map(b=>`${b.e}${b.n} ¥${b.p.toLocaleString()}`).join(' / '):'購買なし';
+    mk.bindPopup(`<div class="popup-name">${agent.emoji} ${agent.name}</div><div class="popup-loc">📍${loc.n}</div><div class="popup-t">${sl.title}</div><div class="popup-buy">${buyStr}</div>`,{offset:[0,-8]});
+    mk.on('click',()=>selectAgent(agent.id));
+    mk.addTo(map);
+    markers[agent.id]=mk;
+  });
+
+  // selected agent path
+  if(selectedId){
+    const agent=agentMap[selectedId];
+    const positions=agent.schedule.slice(0,currentSlot+1).map((_,i)=>{
+      const tmp={...agent,schedule:agent.schedule};
+      const savedSlot=currentSlot;
+      currentSlot=i;
+      const pos=agentPos(agent);
+      currentSlot=savedSlot;
+      return pos;
+    });
+    if(positions.length>1){
+      paths[selectedId]=L.polyline(positions,{color:TC[agent.type],weight:2.5,opacity:.6,dashArray:'5,4'}).addTo(map);
+    }
+  }
+
+  // interaction lines
+  const int=INTS[currentSlot];
+  if(int){
+    const positions=int.agents.map(id=>{
+      const savedSlot=currentSlot;
+      const pos=agentPos(agentMap[id]);
+      return pos;
+    });
+    intLines['int']=L.polyline(positions,{color:'#f0883e',weight:2,opacity:.7,dashArray:'6,4'}).addTo(map);
+  }
+}
+
+// fix: path computation without side effects
+function computePositionAtSlot(agent, slotIdx){
+  const loc = LOCS[agent.schedule[slotIdx].loc];
+  const siblings = AGENTS.filter(a=>a.schedule[slotIdx].loc===agent.schedule[slotIdx].loc);
+  const idx = siblings.findIndex(a=>a.id===agent.id);
+  const n = siblings.length;
+  if(n===1) return [loc.lat,loc.lng];
+  const r = n<=4?0.0003:n<=8?0.0005:0.0008;
+  const angle = (2*Math.PI*idx)/n - Math.PI/2;
+  return [loc.lat+r*Math.sin(angle), loc.lng+r*Math.cos(angle)];
+}
+
+function updateMapClean(){
+  Object.values(markers).forEach(m=>map.removeLayer(m));
+  markers={};
+  Object.values(paths).forEach(l=>map.removeLayer(l));
+  paths={};
+  Object.values(intLines).forEach(l=>map.removeLayer(l));
+  intLines={};
+
+  AGENTS.forEach(agent=>{
+    const pos=computePositionAtSlot(agent,currentSlot);
+    const mk=L.marker(pos,{icon:agentIcon(agent),zIndexOffset:selectedId===agent.id?1000:0});
+    const sl=agent.schedule[currentSlot];
+    const loc=LOCS[sl.loc];
+    const buyStr=sl.buys.length?sl.buys.map(b=>`${b.e}${b.n} ¥${b.p.toLocaleString()}`).join(' / '):'購買なし';
+    mk.bindPopup(`<div class="popup-name">${agent.emoji} ${agent.name}</div><div class="popup-loc">📍${loc.n}</div><div class="popup-t">${sl.title}</div><div class="popup-buy">${buyStr}</div>`,{offset:[0,-8]});
+    mk.on('click',()=>selectAgent(agent.id));
+    mk.addTo(map);
+    markers[agent.id]=mk;
+  });
+
+  if(selectedId){
+    const agent=agentMap[selectedId];
+    const positions=agent.schedule.slice(0,currentSlot+1).map((_,i)=>computePositionAtSlot(agent,i));
+    if(positions.length>1){
+      paths[selectedId]=L.polyline(positions,{color:TC[agent.type],weight:2.5,opacity:.6,dashArray:'5,4'}).addTo(map);
+    }
+  }
+
+  const int=INTS[currentSlot];
+  if(int){
+    const positions=int.agents.map(id=>computePositionAtSlot(agentMap[id],currentSlot));
+    intLines['int']=L.polyline(positions,{color:'#f0883e',weight:2,opacity:.7,dashArray:'6,4'}).addTo(map);
+  }
+}
+
+// ============================================================
+// TIMELINE BAR
+// ============================================================
+function renderTimeline(){
+  const bar=document.getElementById('tlBar');
+  bar.innerHTML='';
+  SLOTS.forEach(s=>{
+    const hasInt=!!INTS[s.id];
+    const div=document.createElement('div');
+    div.className=`tl-slot${s.id===currentSlot?' active':''}`;
+    div.onclick=()=>setSlot(s.id);
+    div.innerHTML=`
+      <div class="tl-node">
+        ${s.icon}
+        ${hasInt?'<div class="interact-dot"></div>':''}
+      </div>
+      <div class="tl-label">${s.label}</div>
+      <div class="tl-time">${s.time}</div>`;
+    bar.appendChild(div);
+  });
+  document.getElementById('tlCurrentLabel').textContent=`${SLOTS[currentSlot].icon} ${SLOTS[currentSlot].label} ${SLOTS[currentSlot].time}`;
+}
+
+// ============================================================
+// AGENT LIST
+// ============================================================
+function getFilteredAgents(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  return AGENTS.filter(a=>{
+    if(filterType!=='all'&&a.type!==filterType) return false;
+    if(q&&!a.name.includes(q)&&!a.job.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderList(){
+  const container=document.getElementById('agentList');
+  container.innerHTML='';
+  getFilteredAgents().forEach(agent=>{
+    const sl=agent.schedule[currentSlot];
+    const loc=LOCS[sl.loc];
+    const c=TC[agent.type];
+    const buyTotal=agent.schedule.slice(0,currentSlot+1).reduce((s,sl2)=>s+sl2.buys.reduce((s2,b)=>s2+b.p,0),0);
+    const hasBuyNow=sl.buys.length>0;
+    const div=document.createElement('div');
+    div.className=`agent-card${selectedId===agent.id?' active':''}`;
+    div.style.setProperty('--c',c);
+    div.innerHTML=`
+      <div class="agent-emoji">${agent.emoji}</div>
+      <div class="agent-card-body">
+        <div class="card-top">
+          <span class="card-name">${agent.name}</span>
+          <span class="card-age">${agent.age}歳</span>
+        </div>
+        <div class="card-job">${agent.job}</div>
+        <div class="card-title">${sl.title}</div>
+        <div class="card-loc"><span class="loc-dot"></span>${loc.n}</div>
+        ${buyTotal>0?`<div class="card-buy">💰 今日の消費: ¥${buyTotal.toLocaleString()}${hasBuyNow?' 🛒':''}</div>`:''}
+      </div>`;
+    div.onclick=()=>selectAgent(agent.id);
+    container.appendChild(div);
+  });
+}
+
+// ============================================================
+// DETAIL PANEL
+// ============================================================
+function renderDetail(){
+  const panel=document.getElementById('detailPanel');
+  if(!selectedId){panel.classList.add('hidden');return;}
+  panel.classList.remove('hidden');
+  const agent=agentMap[selectedId];
+  const c=TC[agent.type];
+  // total spend
+  const totalSpend=agent.schedule.reduce((s,sl)=>s+sl.buys.reduce((s2,b)=>s2+b.p,0),0);
+  const todaySpend=agent.schedule.slice(0,currentSlot+1).reduce((s,sl)=>s+sl.buys.reduce((s2,b)=>s2+b.p,0),0);
+
+  // vertical timeline HTML
+  const vtlHTML=SLOTS.map(s=>{
+    const sl=agent.schedule[s.id];
+    const loc=LOCS[sl.loc];
+    const isActive=s.id===currentSlot;
+    const int=INTS[s.id];
+    const hasInt=int&&int.agents.includes(agent.id);
+    const buysHTML=sl.buys.map(b=>`
+      <div class="buy-item">
+        <span class="b-emo">${b.e}</span>
+        <span class="b-name">${b.n}</span>
+        <span class="b-price">¥${b.p.toLocaleString()}</span>
+        <span style="font-size:10px;color:#8b949e;margin-left:4px">${b.s}</span>
+      </div>`).join('');
+    const intHTML=hasInt?`
+      <div class="vtl-interact">
+        <div class="i-label">💬 会話イベント</div>
+        <div class="vtl-dialogue">${int.dialogue}</div>
+      </div>`:'';
+    return `
+      <div class="vtl-item${isActive?' active-slot':''}" onclick="expandSlot(${s.id})">
+        <div class="vtl-head">
+          <span class="vtl-icon">${s.icon}</span>
+          <div class="vtl-info">
+            <div class="vtl-time">${s.label} ${s.time}</div>
+            <div class="vtl-slot-title">${sl.title}</div>
+            <div class="vtl-loc">📍${loc.n}</div>
+          </div>
+          ${hasInt?'<span style="font-size:12px;color:#f0883e">💬</span>':''}
+          ${sl.buys.length?`<span style="font-size:11px;color:#ffa657">¥${sl.buys.reduce((s,b)=>s+b.p,0).toLocaleString()}</span>`:''}
+        </div>
+        <div class="vtl-expand">
+          <div class="vtl-action">${sl.action}</div>
+          ${sl.buys.length?`<div class="vtl-buys">${buysHTML}</div>`:''}
+          ${intHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('detailBody').innerHTML=`
+    <div class="d-agent-top" style="--c:${c}">
+      <div class="d-emo" style="--c:${c}">${agent.emoji}</div>
+      <div>
+        <div class="d-name">${agent.name}（${agent.age}歳）</div>
+        <div class="d-job">${agent.job}</div>
+        <div class="d-type-badge" style="--c:${c}">${TL[agent.type]}</div>
+      </div>
+    </div>
+    <div class="buy-total">
+      <div>
+        <div class="label">今日の累計消費（${SLOTS[currentSlot].label}まで）</div>
+        <div style="font-size:10px;color:#8b949e;margin-top:2px">1日合計: ¥${totalSpend.toLocaleString()}</div>
+      </div>
+      <div class="amount">¥${todaySpend.toLocaleString()}</div>
+    </div>
+    <div class="vtl">${vtlHTML}</div>
+  `;
+}
+
+function expandSlot(slotId){
+  setSlot(slotId);
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+function setSlot(id){
+  currentSlot=id;
+  renderTimeline();
+  renderList();
+  renderDetail();
+  updateMapClean();
+}
+
+function selectAgent(id){
+  selectedId=(selectedId===id)?null:id;
+  if(selectedId){
+    const pos=computePositionAtSlot(agentMap[selectedId],currentSlot);
+    map.setView(pos,16,{animate:true});
+  }
+  renderList();
+  renderDetail();
+  updateMapClean();
+}
+
+function setFilter(type,el){
+  filterType=type;
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initMap();
+renderTimeline();
+renderList();
+updateMapClean();
+</script>
+</body>
+</html>
