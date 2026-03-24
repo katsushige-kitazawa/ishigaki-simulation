@@ -254,7 +254,8 @@ header .meta{font-size:11px;color:#8b949e}
 .fac-rating{font-size:13px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .fac-row{font-size:11px;color:#c9d1d9;margin-bottom:3px;display:flex;align-items:flex-start;gap:5px}
 .fac-note{font-size:11px;color:#8b949e;line-height:1.65;margin:7px 0;padding:7px 8px;background:#0d1117;border-radius:6px;border-left:2px solid #30363d}
-.fac-link{display:inline-block;margin-top:6px;font-size:11px;color:#58a6ff;text-decoration:none;padding:4px 10px;border:1px solid rgba(88,166,255,.3);border-radius:5px;background:rgba(88,166,255,.07)}
+.fac-links{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.fac-link{font-size:11px;color:#58a6ff;text-decoration:none;padding:4px 10px;border:1px solid rgba(88,166,255,.3);border-radius:5px;background:rgba(88,166,255,.07)}
 .fac-link:hover{background:rgba(88,166,255,.18)}
 </style>
 </head>
@@ -1443,214 +1444,302 @@ function scrubProgress(e){
 }
 
 // ============================================================
-// FACILITY (LOCATION) DETAILS
-// 食べログ等の公開情報を元にした石垣島の実在施設情報
+// FACILITY (LOCATION) DETAILS  (~52件)
+// 出典: 食べログ / TripAdvisor / 石垣市観光協会 / 八重山観光連盟
 // ============================================================
 const LOC_DETAILS = {
-  port: {
-    name:'石垣漁港',       cat:'漁港・市場',  icon:'⚓', color:'#4a90d9',
-    genre:'水産物・生鮮市場',  price:'—',
-    hours:'早朝〜午前中（競り：6時頃）',
-    address:'石垣市新港町',
-    note:'石垣島最大の漁港。グルクン・カーエーなど南洋魚が水揚げされる。早朝の競りは地元民の日常風景。',
+  // ── 既存シミュレーション拠点 ──────────────────────────────────
+  port:{lat:24.3430,lng:124.1870,name:'石垣漁港',cat:'漁港・市場',icon:'⚓',color:'#4a90d9',
+    genre:'水産物・生鮮',price:'—',hours:'早朝〜午前中（競り：6時頃）',address:'石垣市新港町',
+    note:'石垣島最大の漁港。グルクン・カーエーなど南洋魚が水揚げされる。早朝の競りは地元民の日常風景。八重山諸島の漁業の拠点。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  ferry: {
-    name:'離島ターミナル',  cat:'交通施設',    icon:'⛴️', color:'#4a90d9',
-    genre:'フェリー・観光案内', price:'—',
-    hours:'7:00〜20:00',
-    address:'石垣市美崎町1',
-    note:'西表島・竹富島・波照間島など八重山離島へのフェリーが発着。1Fに売店・2Fに展望デッキあり。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  market: {
-    name:'石垣市公設市場',  cat:'市場',        icon:'🏪', color:'#e67e22',
-    genre:'生鮮食品・惣菜・土産', price:'¥100〜',
-    hours:'8:00〜21:00（店舗により異なる）',
-    address:'石垣市大川208',
-    note:'地元の台所として親しまれる公設市場。2F食堂街では購入した食材を調理してもらえる「持込み調理」が名物。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  ferry:{lat:24.3380,lng:124.1890,name:'石垣港離島ターミナル',cat:'交通施設',icon:'⛴️',color:'#4a90d9',
+    genre:'フェリー・観光案内',price:'—',hours:'7:00〜20:00',address:'石垣市美崎町1',
+    note:'西表島・竹富島・波照間島・小浜島など八重山離島へのフェリーが発着。1Fに売店・2Fに展望デッキ。離島ツアーの起点。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393852-Reviews-Ishigaki_Port_离岛_Terminal-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  market:{lat:24.3365,lng:124.1920,name:'石垣市公設市場',cat:'市場',icon:'🏪',color:'#e67e22',
+    genre:'生鮮食品・惣菜・土産',price:'¥100〜',hours:'8:00〜21:00',address:'石垣市大川208',
+    note:'地元の台所として親しまれる公設市場。2F食堂街では購入した食材を調理してもらえる「持込み調理」が名物。観光客にも人気。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%85%AC%E8%A8%AD%E5%B8%82%E5%A0%B4',
-  },
-  euglena: {
-    name:'ユーグレナモール',  cat:'ショッピング',  icon:'🛍️', color:'#9b59b6',
-    genre:'商店街・土産・雑貨', price:'¥500〜',
-    hours:'10:00〜21:00（店舗により異なる）',
-    address:'石垣市大川周辺',
-    note:'石垣島中心部のアーケード商店街。土産物・カフェ・雑貨店が連なる観光の中心地。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  soba: {
-    name:'島そば一番地',    cat:'食堂・そば',   icon:'🍜', color:'#e74c3c',
-    genre:'八重山そば・沖縄料理',  price:'¥700〜¥1,200',
-    rating: 3.6,
-    hours:'11:00〜売切終了（14:00頃）',
-    address:'石垣市大川270',
-    note:'石垣島を代表する島そばの名店。平打ち麺と豚だし・カツオだしのスープが特徴。早い時間に売り切れることも多い人気店。ソーキそばが一番人気。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  euglena:{lat:24.3364,lng:124.1918,name:'ユーグレナモール',cat:'ショッピング',icon:'🛍️',color:'#9b59b6',
+    genre:'商店街・土産・雑貨',price:'¥500〜',hours:'10:00〜21:00',address:'石垣市大川周辺',
+    note:'石垣島中心部のアーケード商店街。土産物・カフェ・雑貨店が連なる観光の中心地。夜市も開催。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  soba:{lat:24.3340,lng:124.1920,name:'島そば一番地',cat:'食堂・そば',icon:'🍜',color:'#e74c3c',
+    genre:'八重山そば・沖縄料理',price:'¥700〜¥1,200',rating:3.6,hours:'11:00〜売切終了（14:00頃）',address:'石垣市大川270',
+    note:'石垣島を代表する島そばの名店。平打ち麺と豚だし・カツオだしのスープが特徴。早い時間に売り切れることも。ソーキそば・八重山そばが定番。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%B3%B6%E3%81%9D%E3%81%B0',
-  },
-  hitoshi: {
-    name:'居酒屋ひとし',    cat:'居酒屋',       icon:'🍶', color:'#e74c3c',
-    genre:'居酒屋・沖縄料理',    price:'¥3,000〜¥5,000',
-    rating: 3.8,
-    hours:'18:00〜23:00（LO 22:30）',
-    address:'石垣市美崎町7-4',
-    note:'石垣島随一の人気居酒屋。八重山の新鮮な刺身盛りや島豆腐を使ったチャンプルーが絶品。予約必須の人気店。地元民・観光客ともに愛される。',
+    tripadvisor:'https://www.tripadvisor.jp/Restaurants-g298235-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  hitoshi:{lat:24.3376,lng:124.1876,name:'居酒屋ひとし',cat:'居酒屋',icon:'🍶',color:'#c0392b',
+    genre:'居酒屋・沖縄料理',price:'¥3,000〜¥5,000',rating:3.8,hours:'18:00〜23:00（LO 22:30）',address:'石垣市美崎町7-4',
+    note:'石垣島随一の人気居酒屋。新鮮な刺身盛り・島豆腐チャンプルー・海ぶどうが絶品。要予約。地元民・観光客ともに愛される名店。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%81%B2%E3%81%A8%E3%81%97',
-  },
-  cafe_yui: {
-    name:'Cafe & Bar Yui',  cat:'カフェ・バー',  icon:'☕', color:'#16a085',
-    genre:'カフェ・タコライス・バー', price:'¥800〜¥2,000',
-    rating: 3.5,
-    hours:'11:00〜14:30 / 18:00〜24:00',
-    address:'石垣市美崎町14',
+    tripadvisor:'https://www.tripadvisor.jp/Restaurants-g298235-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  cafe_yui:{lat:24.3382,lng:124.1893,name:'Cafe & Bar Yui',cat:'カフェ・バー',icon:'☕',color:'#16a085',
+    genre:'カフェ・タコライス・バー',price:'¥800〜¥2,000',rating:3.5,hours:'11:00〜14:30 / 18:00〜24:00',address:'石垣市美崎町14',
     note:'昼はタコライス・石垣牛バーガーなどランチ。夜はバーとしても営業。離島ターミナルから徒歩3分。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=Yui',
-  },
-  tacos: {
-    name:'タコス屋 QueRico', cat:'メキシコ料理', icon:'🌮', color:'#f39c12',
-    genre:'タコス・メキシコ料理',  price:'¥600〜¥1,500',
-    rating: 3.4,
-    hours:'11:00〜20:00（売切終了）',
-    address:'石垣市大川付近',
-    note:'石垣島でタコスといえばここ。もちもち皮のタコスにスパイシーな挽肉・チーズ・野菜がたっぷり。テイクアウト可能。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%82%BF%E3%82%B3%E3%82%B9',
-  },
-  gurukun: {
-    name:'居酒屋 珊瑚',     cat:'居酒屋',       icon:'🐟', color:'#e74c3c',
-    genre:'居酒屋・地元料理',    price:'¥2,500〜¥4,000',
-    rating: 3.5,
-    hours:'18:00〜翌1:00',
-    address:'石垣市大川付近',
-    note:'地元の漁師や建設業者が集う下町居酒屋。グルクン唐揚げ・もずく天ぷら・泡盛が充実。観光客より地元客が多く、リアルな島の雰囲気を味わえる。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E7%8F%8A%E7%91%9A',
-  },
-  market_din: {
-    name:'市場食堂',        cat:'食堂',         icon:'🍱', color:'#e67e22',
-    genre:'定食・沖縄料理',      price:'¥500〜¥1,000',
-    rating: 3.3,
-    hours:'8:00〜15:00',
-    address:'石垣市公設市場2F',
-    note:'公設市場2Fの食堂街。1Fで購入した鮮魚を持ち込み調理（500円〜）できる名物システムが人気。朝からにぎわう地元民の食事処。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%B8%82%E5%A0%B4',
-  },
-  maxvalu: {
-    name:'マックスバリュ 石垣店', cat:'スーパー', icon:'🛒', color:'#27ae60',
-    genre:'スーパーマーケット',   price:'¥100〜',
-    hours:'7:00〜24:00',
-    address:'石垣市石垣3丁目付近',
-    note:'石垣島最大級のスーパー。島野菜・泡盛・地産地消の食材が揃う。観光客も旅の食材調達に利用。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=Yui'},
+  tacos:{lat:24.3339,lng:124.1920,name:'タコス屋 QueRico',cat:'メキシコ料理',icon:'🌮',color:'#f39c12',
+    genre:'タコス・メキシコ料理',price:'¥600〜¥1,500',rating:3.4,hours:'11:00〜20:00（売切終了）',address:'石垣市大川付近',
+    note:'石垣島名物タコスの人気店。もちもち皮のタコスにスパイシー挽肉・チーズ・野菜がたっぷり。テイクアウト可能。行列ができることも。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%82%BF%E3%82%B3%E3%82%B9'},
+  gurukun:{lat:24.3372,lng:124.1905,name:'居酒屋 珊瑚',cat:'居酒屋',icon:'🐟',color:'#c0392b',
+    genre:'居酒屋・地元料理',price:'¥2,500〜¥4,000',rating:3.5,hours:'18:00〜翌1:00',address:'石垣市大川付近',
+    note:'地元の漁師や建設業者が集う下町居酒屋。グルクン唐揚げ・もずく天ぷら・泡盛が充実。観光客より地元客が多くリアルな島の雰囲気。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E7%8F%8A%E7%91%9A'},
+  market_din:{lat:24.3366,lng:124.1921,name:'市場食堂（公設市場2F）',cat:'食堂・そば',icon:'🍱',color:'#e67e22',
+    genre:'定食・沖縄料理',price:'¥500〜¥1,000',rating:3.3,hours:'8:00〜15:00',address:'石垣市公設市場2F',
+    note:'公設市場2Fの食堂街。1Fで購入した鮮魚を持ち込み調理（500円〜）できる名物システムが観光客にも人気。朝からにぎわう地元民の食事処。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%B8%82%E5%A0%B4'},
+  maxvalu:{lat:24.3277,lng:124.2025,name:'マックスバリュ 石垣店',cat:'スーパー',icon:'🛒',color:'#27ae60',
+    genre:'スーパーマーケット',price:'¥100〜',hours:'7:00〜24:00',address:'石垣市石垣3丁目',
+    note:'石垣島最大級のスーパー。島野菜・泡盛・地産地消の食材が揃う。観光客の食材調達にも利用される。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/'},
+  drugstore:{lat:24.3278,lng:124.2020,name:'ドラッグストアモリ 石垣店',cat:'薬局',icon:'💊',color:'#3498db',
+    genre:'薬局・日用品・化粧品',price:'¥100〜',hours:'9:00〜21:00',address:'石垣市石垣',
+    note:'医薬品・化粧品・日用品を扱うドラッグストア。観光客の日焼け止め・虫よけ需要も高い。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/'},
+  souvenir:{lat:24.3385,lng:124.1896,name:'お土産店 島宝',cat:'土産物店',icon:'🎁',color:'#8e44ad',
+    genre:'石垣島土産・雑貨',price:'¥500〜¥5,000',hours:'9:00〜21:00',address:'石垣市美崎町付近',
+    note:'八重山みやげが揃う土産物店。石垣島の塩・黒糖・紅芋菓子・シーサー陶器など定番から限定品まで幅広く揃う。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/'},
+  beach:{lat:24.3250,lng:124.2050,name:'真栄里ビーチ',cat:'ビーチ・海水浴',icon:'🏖️',color:'#2980b9',
+    genre:'海水浴・シュノーケル',price:'無料',hours:'遊泳可能：3月〜10月',address:'石垣市真栄里',
+    note:'透明度の高いサンゴ礁のビーチ。川平湾より混雑が少ない地元民も愛す穴場ビーチ。シュノーケリングに最適。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  hospital:{lat:24.3280,lng:124.2028,name:'八重山病院',cat:'医療施設',icon:'🏥',color:'#e74c3c',
+    genre:'総合病院',price:'—',hours:'外来：8:30〜11:30（平日）',address:'石垣市真栄里585-1',
+    note:'八重山諸島唯一の総合病院。島内外の住民の医療を担う。24時間救急対応。',
+    kanko:'https://www.pref.okinawa.jp/'},
+  city_hall:{lat:24.3265,lng:124.2035,name:'石垣市役所',cat:'行政施設',icon:'🏛️',color:'#7f8c8d',
+    genre:'市役所・行政手続き',price:'—',hours:'8:30〜17:15（平日）',address:'石垣市美崎町14',
+    note:'石垣市の行政の中心。観光振興・漁業支援・移住促進など行政サービスを提供。移住相談窓口もある。',
+    kanko:'https://www.city.ishigaki.okinawa.jp/'},
+  famima:{lat:24.3400,lng:124.1900,name:'ファミリーマート 石垣登野城店',cat:'コンビニ',icon:'🏪',color:'#27ae60',
+    genre:'コンビニエンスストア',price:'¥100〜',hours:'24時間営業',address:'石垣市登野城付近',
+    note:'24時間営業のコンビニ。離島ではコンビニの数が限られるため重要な生活インフラ。ATM設置。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/'},
+  guesthouse:{lat:24.3480,lng:124.1900,name:'ゲストハウス（登野城）',cat:'宿泊施設',icon:'🏠',color:'#8e44ad',
+    genre:'ゲストハウス・民宿',price:'¥3,500〜¥5,000/泊',hours:'チェックイン 15:00〜',address:'石垣市登野城',
+    note:'移住者が経営する小規模ゲストハウス。地元情報を教えてもらえると口コミで評判。観光客と地元民の交流拠点。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  drugstore: {
-    name:'ドラッグストア',  cat:'薬局',         icon:'💊', color:'#3498db',
-    genre:'薬局・日用品',        price:'¥100〜',
-    hours:'9:00〜21:00',
-    address:'石垣市石垣',
-    note:'医薬品・化粧品・日用品を扱うドラッグストア。観光客の日焼け止め・常備薬需要も高い。',
+    tripadvisor:'https://www.tripadvisor.jp/Hotels-g298235-Ishigaki_Okinawa_Prefecture_Kyushu-Hotels.html'},
+  hotel:{lat:24.3390,lng:124.1895,name:'ホテル（市内）',cat:'宿泊施設',icon:'🏨',color:'#8e44ad',
+    genre:'ビジネス・観光ホテル',price:'¥8,000〜¥20,000/泊',hours:'チェックイン 15:00〜',address:'石垣市市内',
+    note:'離島ターミナル周辺に複数のホテルが集積。観光シーズンの稼働率は90%超。',
+    tripadvisor:'https://www.tripadvisor.jp/Hotels-g298235-Ishigaki_Okinawa_Prefecture_Kyushu-Hotels.html'},
+
+  // ── 追加：グルメ ──────────────────────────────────────────
+  kunatsuyu:{lat:24.3348,lng:124.1925,name:'八重山そば処 来夏世',cat:'食堂・そば',icon:'🍜',color:'#e74c3c',
+    genre:'八重山そば・定食',price:'¥600〜¥1,000',rating:3.7,hours:'11:00〜売切終了',address:'石垣市大川',
+    note:'地元民から「ここが本物」と言われる老舗の八重山そば。シンプルながら深みのあるカツオだしスープ。落ち着いた雰囲気でゆっくり食べられる。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%85%AB%E9%87%8D%E5%B1%B1%E3%81%9D%E3%81%B0'},
+  kingyuu:{lat:24.3378,lng:124.1878,name:'焼肉 金牛',cat:'焼肉・ステーキ',icon:'🥩',color:'#922b21',
+    genre:'焼肉・石垣牛',price:'¥4,000〜¥8,000',rating:3.9,hours:'17:00〜23:00（LO 22:00）',address:'石垣市美崎町14-1',
+    note:'石垣牛を最高の状態で味わえる焼肉の名店。希少部位が揃う。県外からのリピーターも多く、石垣島グルメの筆頭。要予約。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E9%87%91%E7%89%9B',
+    tripadvisor:'https://www.tripadvisor.jp/Restaurants-g298235-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  steak_villa:{lat:24.3365,lng:124.1916,name:'石垣牛ステーキ ミヤラ',cat:'焼肉・ステーキ',icon:'🥩',color:'#922b21',
+    genre:'ステーキ・石垣牛',price:'¥3,500〜¥7,000',rating:3.7,hours:'11:30〜14:00 / 17:30〜22:00',address:'石垣市大川',
+    note:'ランチからステーキが楽しめる石垣牛専門店。リーズナブルな石垣牛ランチセットが観光客に人気。宮良牛を使用。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E7%9F%B3%E5%9E%A3%E7%89%9B'},
+  paikaji:{lat:24.3362,lng:124.1913,name:'パイカジ',cat:'食堂・そば',icon:'🍽️',color:'#e67e22',
+    genre:'沖縄料理・定食',price:'¥900〜¥1,800',rating:3.6,hours:'12:00〜14:00 / 18:00〜22:00',address:'石垣市大川',
+    note:'島野菜を使った創作沖縄料理が評判の食堂。チャンプルー・ラフテー・ゴーヤーの天ぷらなど家庭料理をベースにした定食。移住者・観光客の両方に人気。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%83%91%E3%82%A4%E3%82%AB%E3%82%B8'},
+  kaiji_shokudo:{lat:24.3432,lng:124.1869,name:'海人食堂',cat:'食堂・そば',icon:'🐟',color:'#e67e22',
+    genre:'海鮮・魚料理定食',price:'¥800〜¥1,500',rating:3.5,hours:'7:00〜14:00（売切終了）',address:'石垣市新港町（漁港近く）',
+    note:'漁師が直接持ち込んだ朝獲れの魚を使う食堂。刺身定食・魚汁・グルクン唐揚げが名物。早朝から漁師や港湾関係者が集まる。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E6%B5%B7%E4%BA%BA'},
+  craft_beer:{lat:24.3360,lng:124.1905,name:'石垣島地ビール工房',cat:'カフェ・バー',icon:'🍺',color:'#d4ac0d',
+    genre:'クラフトビール・バー',price:'¥600〜¥2,000',hours:'14:00〜22:00',address:'石垣市大川',
+    note:'石垣島産のフルーツを使ったクラフトビールが楽しめる工房直営バー。パッションフルーツやシークワーサーのビールが観光客に大人気。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%82%AF%E3%83%A9%E3%83%95%E3%83%88%E3%83%93%E3%83%BC%E3%83%AB'},
+  gelato:{lat:24.3364,lng:124.1919,name:'ジェラートナポリ',cat:'スイーツ',icon:'🍦',color:'#e91e8c',
+    genre:'ジェラート・スイーツ',price:'¥400〜¥700',hours:'10:00〜19:00',address:'石垣市大川（ユーグレナモール内）',
+    note:'島産フルーツを使ったジェラートが人気。マンゴー・パッションフルーツ・シークワーサー・黒糖など沖縄らしいフレーバーが揃う。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%82%B8%E3%82%A7%E3%83%A9%E3%83%BC%E3%83%88'},
+  cafe_mahae:{lat:24.3383,lng:124.1890,name:'カフェ マハエ',cat:'カフェ・バー',icon:'☕',color:'#16a085',
+    genre:'カフェ・軽食',price:'¥700〜¥1,500',rating:3.6,hours:'10:00〜17:00（LO 16:30）',address:'石垣市美崎町',
+    note:'石垣港を見渡せる絶景カフェ。島ぜんざい・フルーツパフェが人気。観光の合間の休憩に最適な立地。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%83%9E%E3%83%8F%E3%82%A8'},
+  boulangerie:{lat:24.3355,lng:124.1920,name:'ブーランジェリー石垣島',cat:'カフェ・バー',icon:'🥐',color:'#c9962b',
+    genre:'パン・カフェ',price:'¥200〜¥800',hours:'7:00〜13:00（売切終了）',address:'石垣市大川',
+    note:'石垣島産の食材を使った手作りパンが早朝から売れる人気ベーカリー。クリームチーズ入り黒糖パンが名物。観光客・地元民ともに行列ができる。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%83%91%E3%83%B3'},
+  minsa_craft:{lat:24.3380,lng:124.1940,name:'みんさー工芸館',cat:'文化・体験',icon:'🧵',color:'#8e44ad',
+    genre:'伝統工芸・体験・土産',price:'¥500〜¥5,000',hours:'9:00〜18:00',address:'石垣市登野城967',
+    note:'八重山みんさー織りの工芸館。伝統的な手織り体験（要予約）やオリジナル作品の販売。石垣島伝統の「いつの世までも末永く」の想いが込められた絣模様が有名。',
     tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  souvenir: {
-    name:'お土産店 島宝',   cat:'土産物店',     icon:'🎁', color:'#9b59b6',
-    genre:'石垣島土産・雑貨',    price:'¥500〜¥5,000',
-    hours:'9:00〜21:00',
-    address:'石垣市美崎町付近',
-    note:'八重山みやげが揃う土産物店。石垣島の塩・黒糖・紅芋菓子・シーサー陶器など定番から限定品まで。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  beach: {
-    name:'真栄里ビーチ',    cat:'海水浴場・観光', icon:'🏖️', color:'#2980b9',
-    genre:'海水浴・シュノーケル', price:'無料',
-    hours:'遊泳可能期間：3月〜10月',
-    address:'石垣市真栄里',
-    note:'透明度の高いサンゴ礁のビーチ。シュノーケリングスポットとして地元民にも愛される穴場。川平湾より混雑が少なく、のんびり泳ぎたい人向け。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  hospital: {
-    name:'八重山病院',      cat:'医療施設',     icon:'🏥', color:'#e74c3c',
-    genre:'総合病院',            price:'—',
-    hours:'外来：8:30〜11:30',
-    address:'石垣市真栄里585-1',
-    note:'八重山諸島唯一の総合病院。島内外の住民の医療を担う。救急対応も24時間体制。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  city_hall: {
-    name:'石垣市役所',      cat:'行政施設',     icon:'🏛️', color:'#7f8c8d',
-    genre:'市役所・行政手続き',  price:'—',
-    hours:'8:30〜17:15（平日）',
-    address:'石垣市美崎町14',
-    note:'石垣市の行政の中心。観光振興・漁業支援・移住促進など多岐にわたる行政サービスを提供。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  famima: {
-    name:'ファミリーマート 石垣店', cat:'コンビニ', icon:'🏪', color:'#27ae60',
-    genre:'コンビニエンスストア',  price:'¥100〜',
-    hours:'24時間営業',
-    address:'石垣市登野城付近',
-    note:'24時間営業のコンビニ。離島ではコンビニの数が限られるため、地元民にとって重要な生活インフラ。ATMも設置。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  guesthouse: {
-    name:'ゲストハウス（登野城）', cat:'宿泊施設', icon:'🏠', color:'#8e44ad',
-    genre:'ゲストハウス・民宿',   price:'¥3,500〜¥5,000/泊',
-    hours:'チェックイン 15:00〜',
-    address:'石垣市登野城',
-    note:'移住者が経営する小規模ゲストハウス。ドミトリーから個室まで。地元情報を教えてもらえると口コミで評判。観光客と地元民の交流拠点にもなっている。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
-  hotel: {
-    name:'ホテル（市内）',   cat:'宿泊施設',     icon:'🏨', color:'#8e44ad',
-    genre:'ビジネス・観光ホテル', price:'¥8,000〜¥20,000/泊',
-    hours:'チェックイン 15:00〜',
-    address:'石垣市市内',
-    note:'離島ターミナル・ユーグレナモール周辺に複数のホテルが集積。観光シーズンの稼働率は90%超。',
-    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
-  },
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393857-Reviews-Minsa_Craft_Center-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+
+  // ── 追加：観光スポット（TripAdvisor・観光協会参照）──────────────
+  kabira:{lat:24.4546,lng:124.1453,name:'川平湾',cat:'観光名所',icon:'🌊',color:'#1a7ab5',
+    genre:'絶景・シュノーケル・グラスボート',price:'無料（グラスボート¥1,500〜）',
+    hours:'終日開放（グラスボート 9:00〜17:00）',address:'石垣市川平',
+    note:'石垣島を代表する絶景スポット。エメラルドグリーンの海と白砂の浜が美しい国指定名勝。グラスボートで海中も観察可能。遊泳は禁止されているが、景色は格別。TripAdvisor石垣島1位の観光地。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393843-Reviews-Kabira_Bay-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  banna_park:{lat:24.3870,lng:124.1890,name:'バンナ岳（バンナ公園展望台）',cat:'観光名所',icon:'🏔️',color:'#27ae60',
+    genre:'展望台・自然',price:'無料',hours:'終日',address:'石垣市石垣',
+    note:'標高230mのバンナ岳頂上から石垣市街地・石垣湾・竹富島などを一望できる展望台。夕日の名所でもある。亜熱帯の植物が豊かで、野鳥観察にも最適。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393845-Reviews-Banna_Park-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  hirakubo:{lat:24.5813,lng:124.3344,name:'平久保崎灯台',cat:'観光名所',icon:'🏮',color:'#1a7ab5',
+    genre:'絶景・灯台・ドライブ',price:'無料',hours:'終日',address:'石垣市平久保',
+    note:'石垣島最北端の岬にある白い灯台。360度の大パノラマが楽しめる絶景スポット。エメラルドブルーの海と断崖絶壁のコントラストが美しく、観光客に人気のドライブルート終着点。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d3238882-Reviews-Cape_Hirakubo-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  onigasaki:{lat:24.3031,lng:124.0750,name:'御神崎（おがんざき）',cat:'観光名所',icon:'🌅',color:'#e67e22',
+    genre:'絶景・夕日・灯台',price:'無料',hours:'終日',address:'石垣市崎枝',
+    note:'石垣島西部の断崖絶壁と白い灯台が印象的なスポット。夕日の名所として知られ、日没時刻には多くの観光客が訪れる。サンゴ礁の海が広がる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d3238880-Reviews-Cape_Ogan-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  tamatorizaki:{lat:24.5148,lng:124.3098,name:'玉取崎展望台',cat:'観光名所',icon:'🌺',color:'#e91e8c',
+    genre:'展望台・ハイビスカス',price:'無料',hours:'終日',address:'石垣市伊原間',
+    note:'石垣島北部の展望台。ハイビスカスが咲き乱れる遊歩道を歩き、東・西の両海岸を一望できる絶景ポイント。天気の良い日には与那国島まで見える。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393858-Reviews-Tamatorizaki_Observation_Deck-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  cave:{lat:24.3990,lng:124.2000,name:'石垣島鍾乳洞',cat:'観光名所',icon:'🦇',color:'#5d4e75',
+    genre:'鍾乳洞・自然',price:'¥1,200（大人）',hours:'9:00〜18:30（最終入場18:00）',address:'石垣市石垣1',
+    note:'20万年前に形成された全長3.2kmの鍾乳洞。公開されている660mのコースを歩く。イルミネーションで彩られた神秘的な光景が広がる。冷涼な洞内は夏の涼みスポットにも。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393847-Reviews-Ishigaki_Island_Stalactite_Cave-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  yaima_village:{lat:24.4173,lng:124.1713,name:'石垣やいま村',cat:'文化・体験',icon:'🏯',color:'#8e44ad',
+    genre:'伝統文化・体験・動物',price:'¥1,000（大人）',hours:'9:00〜17:30',address:'石垣市名蔵967-1',
+    note:'八重山の伝統的な民家を移築・復元した文化体験施設。琉球衣装での記念撮影、三線体験、ハブとマングースのショーなど体験コンテンツが充実。リスザルと触れ合えるコーナーも人気。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393850-Reviews-Yaeyama_Yaiima_Village-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  miyara_mangrove:{lat:24.3553,lng:124.2205,name:'宮良川ヒルギ林（マングローブ）',cat:'自然・エコ',icon:'🌿',color:'#27ae60',
+    genre:'マングローブ・カヤック',price:'無料観察（カヤックツアー¥3,000〜）',hours:'終日（カヤックツアーは要予約）',address:'石垣市宮良',
+    note:'石垣島最大のマングローブ林。ヒルギの根が水面に広がる幻想的な景色。カヤックやカヌーで林内を探索するツアーが人気。カニや魚などの生き物も観察できる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  museum:{lat:24.3376,lng:124.1902,name:'石垣市立八重山博物館',cat:'文化・体験',icon:'🏛️',color:'#7f8c8d',
+    genre:'博物館・歴史',price:'¥200（大人）',hours:'9:00〜17:00（月曜休館）',address:'石垣市登野城4-1',
+    note:'八重山の自然・歴史・民俗を展示する博物館。航海文化・農業・染織物など八重山の生活文化を学べる。石垣島の歴史を深掘りしたい人に最適。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393846-Reviews-Yaeyama_Museum-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://www.city.ishigaki.okinawa.jp/'},
+  torinji:{lat:24.3372,lng:124.1940,name:'桃林寺',cat:'文化・体験',icon:'⛩️',color:'#c0392b',
+    genre:'寺院・歴史',price:'無料',hours:'7:00〜19:00',address:'石垣市石垣285',
+    note:'1614年創建の八重山最古の寺院。琉球文化と仏教が融合した独特の建築。境内には1737年に造られた仁王像があり、石垣島の歴史的象徴。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393851-Reviews-Torinji_Temple-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  toshin_bo:{lat:24.3568,lng:124.1583,name:'唐人墓',cat:'文化・体験',icon:'🪦',color:'#7f8c8d',
+    genre:'史跡・歴史',price:'無料',hours:'終日',address:'石垣市大浜',
+    note:'1852年のロバートバウン号難破事件で犠牲になった中国人移民128名を弔う墓。鮮やかな彩色の石造装飾が印象的。近くには白保サンゴ礁を望む景色も。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d3238884-Reviews-Toujin_Grave-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+
+  // ── 追加：ビーチ ────────────────────────────────────────────
+  yonehara:{lat:24.4637,lng:124.1980,name:'米原ビーチ',cat:'ビーチ・海水浴',icon:'🐠',color:'#2980b9',
+    genre:'シュノーケル・海水浴',price:'無料',hours:'終日',address:'石垣市桴海（米原）',
+    note:'石垣島有数の透明度を誇るビーチ。エダサンゴが豊富で、シュノーケルだけでも多種多様な熱帯魚・ウミガメと出会える。設備は少なめだが自然の美しさは石垣随一。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d1393859-Reviews-Yonehara_Beach-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  sukuji:{lat:24.4006,lng:124.1472,name:'底地ビーチ（すくじビーチ）',cat:'ビーチ・海水浴',icon:'🏖️',color:'#2980b9',
+    genre:'海水浴・砂浜',price:'無料（設備利用有料）',hours:'終日（監視員：9:00〜17:30）',address:'石垣市川平',
+    note:'川平湾近くの白砂ビーチ。遠浅で波が穏やかなため子ども連れに人気。シャワー・更衣室完備でファミリーにも使いやすい。夕日スポットとしても知られる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  fusaki_beach:{lat:24.3770,lng:124.1483,name:'フサキビーチ',cat:'ビーチ・海水浴',icon:'🌅',color:'#2980b9',
+    genre:'夕日・海水浴',price:'無料（リゾート施設利用は有料）',hours:'終日',address:'石垣市新川',
+    note:'夕日の名所として知られる石垣島西部のビーチ。砂浜から真正面に沈む夕日が圧巻。フサキビーチリゾートのプライベートビーチとしても知られる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+
+  // ── 追加：アクティビティ ─────────────────────────────────────
+  glass_boat:{lat:24.4546,lng:124.1453,name:'川平湾グラスボート',cat:'アクティビティ',icon:'🚤',color:'#1a7ab5',
+    genre:'グラスボート・観光',price:'¥1,500〜（大人）',hours:'9:00〜17:00（天候による）',address:'石垣市川平',
+    note:'川平湾の底がガラスになったボートで、サンゴ礁・熱帯魚・ウミガメを観察できる。泳がなくても海中が楽しめると老若男女に大人気。複数の業者が運航中。所要約30分。',
+    tripadvisor:'https://www.tripadvisor.jp/Attraction_Review-g298235-d7953628-Reviews-Kabira_Bay_Glass_Bottom_Boat-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  diving:{lat:24.3431,lng:124.1872,name:'石垣島ダイビングセンター',cat:'アクティビティ',icon:'🤿',color:'#1a7ab5',
+    genre:'ダイビング・シュノーケル',price:'¥6,000〜（体験）¥12,000〜（ファンダイビング）',hours:'8:00〜18:00（要予約）',address:'石垣市新港町（漁港周辺）',
+    note:'石垣島屈指のダイビングスポット「マンタスクランブル」や「大崎ハナゴイリーフ」へのツアーを催行。マンタ遭遇率が高く、ダイバーの聖地として世界中から訪れる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-t184-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+  stargazing:{lat:24.4289,lng:124.1740,name:'石垣島天文台（南の島の星まつり）',cat:'アクティビティ',icon:'🔭',color:'#2c3e6b',
+    genre:'天体観測・星空',price:'¥800〜（観望会）',hours:'夜間イベント（要確認）',address:'石垣市新川1024-1',
+    note:'国立天文台VERA石垣島観測局に隣接する天文台。石垣島は日本でも有数の星空の美しい場所。南十字星が観測できる数少ない観察地。夏の星まつりイベントも開催。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
+
+  // ── 追加：リゾートホテル ─────────────────────────────────────
+  ana_intercontinental:{lat:24.4127,lng:124.1453,name:'ANAインターコンチネンタル石垣リゾート',cat:'宿泊施設',icon:'🏨',color:'#1a7ab5',
+    genre:'5つ星リゾートホテル',price:'¥30,000〜¥100,000以上/泊',ta_rating:4.5,hours:'チェックイン 15:00〜',address:'石垣市真栄里354-1',
+    note:'川平湾を望む石垣島を代表する5つ星リゾート。プライベートビーチ・複数のプール・マリンアクティビティが充実。国際的なゲストが多く、石垣島滞在の最高峰。',
+    tripadvisor:'https://www.tripadvisor.jp/Hotel_Review-g298235-d302716-Reviews-ANA_InterContinental_Ishigaki_Resort-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+  fusaki_resort:{lat:24.3765,lng:124.1490,name:'フサキビーチリゾート',cat:'宿泊施設',icon:'🌴',color:'#27ae60',
+    genre:'リゾートホテル',price:'¥15,000〜¥50,000/泊',ta_rating:4.3,hours:'チェックイン 14:00〜',address:'石垣市新川1625',
+    note:'夕日が美しいフサキビーチに直結するリゾート。コテージタイプの客室が豊富で家族・カップルに人気。マリンアクティビティ・サンセットディナーが充実。',
+    tripadvisor:'https://www.tripadvisor.jp/Hotel_Review-g298235-d302712-Reviews-Fusaki_Beach_Resort_Hotel_Villas-Ishigaki_Okinawa_Prefecture_Kyushu.html'},
+
+  // ── 追加：自然・エコ ──────────────────────────────────────────
+  nagura_amparu:{lat:24.4139,lng:124.1358,name:'名蔵アンパル',cat:'自然・エコ',icon:'🦅',color:'#27ae60',
+    genre:'ラムサール湿地・野鳥',price:'無料',hours:'終日',address:'石垣市名蔵',
+    note:'2005年にラムサール条約登録湿地に指定された干潟。マングローブ・海草藻場・干潟がモザイク状に広がる。カンムリワシ・サギ類など希少な渡り鳥の楽園。シーカヤックで探索できる。',
+    tripadvisor:'https://www.tripadvisor.jp/Attractions-g298235-Activities-c61-Ishigaki_Okinawa_Prefecture_Kyushu.html',
+    kanko:'https://yaeyama.or.jp/'},
 };
 
-// category → icon color for the marker circle
+// category → icon color
 const CAT_COLOR = {
   '食堂・そば':'#e74c3c', '居酒屋':'#c0392b', 'カフェ・バー':'#16a085',
-  'メキシコ料理':'#f39c12', '市場':'#e67e22', 'ショッピング':'#9b59b6',
-  'スーパー':'#27ae60', 'コンビニ':'#27ae60', '土産物店':'#8e44ad',
-  '漁港・市場':'#4a90d9', '交通施設':'#4a90d9', '宿泊施設':'#8e44ad',
-  '医療施設':'#e74c3c', '行政施設':'#7f8c8d', '海水浴場・観光':'#2980b9',
-  '薬局':'#3498db',
+  'メキシコ料理':'#f39c12', '焼肉・ステーキ':'#922b21', 'スイーツ':'#e91e8c',
+  '市場':'#e67e22', 'ショッピング':'#9b59b6', 'スーパー':'#27ae60',
+  'コンビニ':'#27ae60', '土産物店':'#8e44ad', '漁港・市場':'#4a90d9',
+  '交通施設':'#4a90d9', '宿泊施設':'#8e44ad', '医療施設':'#e74c3c',
+  '行政施設':'#7f8c8d', 'ビーチ・海水浴':'#2980b9', '薬局':'#3498db',
+  '観光名所':'#1a7ab5', '文化・体験':'#8e44ad', '自然・エコ':'#27ae60',
+  'アクティビティ':'#1a7ab5',
 };
 
 let facilityLayerVisible = false;
 const facilityMarkers = {};
 
 function buildFacilityPopup(key, det){
-  const stars = det.rating
-    ? '⭐'.repeat(Math.round(det.rating)) + ` <span style="color:#ffa657;font-weight:700">${det.rating}</span>`
-    : '';
+  const tabelogRating = det.rating
+    ? `<span style="color:#e74c3c">⭐</span> <strong style="color:#ffa657">${det.rating}</strong> <span style="font-size:10px;color:#8b949e">食べログ</span>` : '';
+  const taRating = det.ta_rating
+    ? `<span style="color:#34a0d9">✈️</span> <strong style="color:#58a6ff">${det.ta_rating}</strong> <span style="font-size:10px;color:#8b949e">TripAdvisor</span>` : '';
+  const ratingRow = (tabelogRating || taRating)
+    ? `<div class="fac-rating">${[tabelogRating,taRating].filter(Boolean).join('<span style="margin:0 6px;color:#30363d">|</span>')}</div>` : '';
+  const links = [
+    det.tabelog      && `<a href="${det.tabelog}"      target="_blank" class="fac-link">🍽️ 食べログ</a>`,
+    det.tripadvisor  && `<a href="${det.tripadvisor}"  target="_blank" class="fac-link">✈️ TripAdvisor</a>`,
+    det.kanko        && `<a href="${det.kanko}"        target="_blank" class="fac-link">🏝️ 観光協会</a>`,
+  ].filter(Boolean).join('');
   return `
     <div class="fac-popup">
       <div class="fac-title">${det.icon} ${det.name}</div>
       <div class="fac-cat">${det.cat} · ${det.genre}</div>
-      ${stars ? `<div class="fac-rating">${stars} <span style="font-size:10px;color:#8b949e">食べログ参考</span></div>` : ''}
+      ${ratingRow}
       <div class="fac-row">💰 ${det.price}</div>
       <div class="fac-row">⏰ ${det.hours}</div>
       <div class="fac-row">📍 ${det.address}</div>
       <div class="fac-note">${det.note}</div>
-      <a href="${det.tabelog}" target="_blank" class="fac-link">🔍 食べログで検索</a>
+      <div class="fac-links">${links}</div>
     </div>`;
 }
 
 function createFacilityMarkers(){
   Object.keys(LOC_DETAILS).forEach(key=>{
-    const loc = LOCS[key];
-    if(!loc) return;
     const det = LOC_DETAILS[key];
+    const loc = LOCS[key];
+    const lat = det.lat ?? loc?.lat;
+    const lng = det.lng ?? loc?.lng;
+    if(lat == null || lng == null) return;
     const color = CAT_COLOR[det.cat] || '#58a6ff';
     const icon = L.divIcon({
       html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:2.5px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,.45);cursor:pointer">${det.icon}</div>`,
       className:'', iconSize:[30,30], iconAnchor:[15,15]
     });
-    const mk = L.marker([loc.lat, loc.lng], {icon, zIndexOffset:-500})
-      .bindPopup(buildFacilityPopup(key, det), {
-        maxWidth: 280, className:'fac-popup-wrap'
-      });
+    const mk = L.marker([lat, lng], {icon, zIndexOffset:-500})
+      .bindPopup(buildFacilityPopup(key, det), {maxWidth:300, className:'fac-popup-wrap'});
     mk.addTo(map);
     facilityMarkers[key] = mk;
   });
