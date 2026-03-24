@@ -184,20 +184,21 @@ header .meta{font-size:11px;color:#8b949e}
 .hazard-color-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
 
 /* ── Layer control ── */
-.layer-ctrl{position:absolute;top:10px;right:10px;z-index:900;background:rgba(22,27,34,.96);border:1px solid #30363d;border-radius:10px;min-width:210px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden}
-.layer-ctrl-hdr{padding:9px 12px;border-bottom:1px solid #30363d;font-size:11px;font-weight:600;color:#8b949e;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.layer-ctrl{position:absolute;top:10px;right:10px;z-index:900;background:rgba(13,17,23,.97);border:1px solid #30363d;border-radius:10px;width:230px;box-shadow:0 4px 20px rgba(0,0,0,.5);overflow:hidden}
+.layer-ctrl-hdr{padding:9px 12px;border-bottom:1px solid #30363d;font-size:12px;font-weight:700;color:#e6edf3;display:flex;align-items:center;gap:6px;transition:background .15s}
 .layer-ctrl-hdr:hover{background:#1c2128}
-.layer-ctrl-body{padding:8px 12px}
-.layer-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;cursor:pointer;border-radius:4px;padding:5px 6px;transition:background .15s}
+.layer-ctrl-body{padding:8px 10px;max-height:420px;overflow-y:auto}
+.layer-group-title{font-size:10px;color:#8b949e;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.layer-row{display:flex;align-items:center;gap:6px;font-size:11px;color:#c9d1d9;border-radius:5px;padding:4px 5px;transition:background .15s;cursor:pointer}
 .layer-row:hover{background:#1c2128}
-.layer-row input[type=checkbox]{accent-color:#58a6ff;width:13px;height:13px;flex-shrink:0}
-.layer-color{width:14px;height:14px;border-radius:3px;flex-shrink:0;opacity:.8}
-.layer-divider{border:none;border-top:1px solid #21262d;margin:6px 0}
-.imported-layer{display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:11px;background:#0d1117;border-radius:5px;margin-bottom:4px}
-.imported-layer .il-name{flex:1;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.imported-layer .il-remove{background:transparent;border:none;color:#8b949e;cursor:pointer;font-size:13px;padding:0 3px}
+.layer-row input[type=checkbox]{accent-color:#58a6ff;width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.layer-row label{display:flex;align-items:center;gap:6px;cursor:pointer;flex:1}
+.lyr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;opacity:.9}
+.layer-source{font-size:9px;color:#8b949e;margin-top:6px;line-height:1.5}
+.imported-layer{display:flex;align-items:center;gap:6px;padding:3px 5px;font-size:10px;background:#0d1117;border-radius:5px;margin-bottom:3px}
+.imported-layer .il-remove{background:transparent;border:none;color:#8b949e;cursor:pointer;font-size:12px;padding:0 2px}
 .imported-layer .il-remove:hover{color:#f85149}
-.geojson-drop-btn{width:100%;padding:6px;font-size:11px;color:#8b949e;background:#0d1117;border:1px dashed #30363d;border-radius:5px;cursor:pointer;text-align:center;margin-top:4px;transition:all .2s}
+.geojson-drop-btn{width:100%;padding:5px;font-size:11px;color:#8b949e;background:#0d1117;border:1px dashed #30363d;border-radius:5px;cursor:pointer;text-align:center;transition:all .2s}
 .geojson-drop-btn:hover{border-color:#58a6ff;color:#58a6ff}
 
 /* ── Map drag overlay ── */
@@ -206,11 +207,11 @@ header .meta{font-size:11px;color:#8b949e}
 .map-drag-overlay span{font-size:18px;color:#58a6ff;font-weight:700;background:rgba(22,27,34,.9);padding:16px 28px;border-radius:10px}
 
 /* ── Hazard legend ── */
-.hazard-legend{position:absolute;bottom:110px;left:10px;z-index:900;background:rgba(22,27,34,.95);border:1px solid #30363d;border-radius:8px;padding:10px 12px;min-width:180px;display:none}
+.hazard-legend{position:absolute;bottom:130px;left:10px;z-index:900;background:rgba(13,17,23,.97);border:1px solid #30363d;border-radius:8px;padding:10px 12px;min-width:190px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .hazard-legend.visible{display:block}
 .hazard-legend-title{font-size:10px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:7px;letter-spacing:.5px}
 .hazard-legend-item{display:flex;align-items:center;gap:7px;font-size:11px;color:#c9d1d9;margin-bottom:4px}
-.hl-swatch{width:16px;height:10px;border-radius:2px;flex-shrink:0}
+.hl-swatch{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 
 /* ── Toast ── */
 .toast-container{position:fixed;bottom:20px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
@@ -330,40 +331,58 @@ header .meta{font-size:11px;color:#8b949e}
 
     <!-- Layer control -->
     <div class="layer-ctrl" id="layerCtrl">
-      <div class="layer-ctrl-hdr">🗺️ レイヤー</div>
-      <div class="layer-row">
-        <input type="checkbox" id="lyr-tsunami" onchange="toggleHazardLayer('tsunami',this.checked)">
-        <label for="lyr-tsunami"><span class="hl-swatch" style="background:rgba(0,120,255,.5);border:1px solid #0078ff"></span>津波浸水</label>
+      <div class="layer-ctrl-hdr" onclick="toggleLayerPanel()" style="cursor:pointer;user-select:none">
+        🗺️ ハザードマップ <span id="layerPanelArrow" style="margin-left:auto;font-size:10px">▲</span>
       </div>
-      <div class="layer-row">
-        <input type="checkbox" id="lyr-flood" onchange="toggleHazardLayer('flood',this.checked)">
-        <label for="lyr-flood"><span class="hl-swatch" style="background:rgba(0,200,255,.4);border:1px solid #00c8ff"></span>洪水浸水</label>
+      <div id="layerPanelBody" class="layer-ctrl-body">
+        <div class="layer-group-title">🌊 水害</div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-tsunami" onchange="toggleHazardLayer('tsunami',this.checked)">
+          <label for="lyr-tsunami"><span class="lyr-dot" style="background:#9b59b6"></span>津波浸水想定</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-flood" onchange="toggleHazardLayer('flood',this.checked)">
+          <label for="lyr-flood"><span class="lyr-dot" style="background:#2980b9"></span>洪水浸水想定（最大規模）</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-flood-l1" onchange="toggleHazardLayer('flood_l1',this.checked)">
+          <label for="lyr-flood-l1"><span class="lyr-dot" style="background:#5dade2"></span>洪水浸水想定（計画規模）</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-hightide" onchange="toggleHazardLayer('hightide',this.checked)">
+          <label for="lyr-hightide"><span class="lyr-dot" style="background:#1abc9c"></span>高潮浸水想定</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-naisui" onchange="toggleHazardLayer('naisui',this.checked)">
+          <label for="lyr-naisui"><span class="lyr-dot" style="background:#48c9b0"></span>内水（雨水出水）浸水想定</label>
+        </div>
+        <div class="layer-group-title" style="margin-top:8px">⛰️ 土砂災害</div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-doseki" onchange="toggleHazardLayer('doseki',this.checked)">
+          <label for="lyr-doseki"><span class="lyr-dot" style="background:#e67e22"></span>土石流警戒区域</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-kyukeisha" onchange="toggleHazardLayer('kyukeisha',this.checked)">
+          <label for="lyr-kyukeisha"><span class="lyr-dot" style="background:#e74c3c"></span>急傾斜地崩壊警戒区域</label>
+        </div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-jisuberi" onchange="toggleHazardLayer('jisuberi',this.checked)">
+          <label for="lyr-jisuberi"><span class="lyr-dot" style="background:#c0392b"></span>地すべり警戒区域</label>
+        </div>
+        <div style="border-top:1px solid #30363d;margin:8px 0 6px"></div>
+        <div class="layer-group-title">📂 GeoJSONインポート</div>
+        <div id="importedLayersList" style="font-size:10px;color:#8b949e;margin-bottom:4px">なし</div>
+        <button class="geojson-drop-btn" onclick="document.getElementById('geojsonFileInput').click()">📂 GeoJSON追加</button>
+        <input type="file" id="geojsonFileInput" accept=".geojson,.json" style="display:none" onchange="importGeoJSONFile(this)">
+        <div class="layer-source">出典: <a href="https://disaportal.gsi.go.jp/" target="_blank" style="color:#58a6ff">国土地理院 ハザードマップポータル</a></div>
       </div>
-      <div class="layer-row">
-        <input type="checkbox" id="lyr-sediment" onchange="toggleHazardLayer('sediment',this.checked)">
-        <label for="lyr-sediment"><span class="hl-swatch" style="background:rgba(255,165,0,.4);border:1px solid #ffa500"></span>土砂災害</label>
-      </div>
-      <div style="border-top:1px solid #30363d;margin:6px 0;padding-top:6px">
-        <div style="font-size:10px;color:#8b949e;margin-bottom:5px">インポート済み</div>
-        <div id="importedLayersList" style="font-size:10px;color:#8b949e">なし</div>
-      </div>
-      <button class="geojson-drop-btn" onclick="document.getElementById('geojsonFileInput').click()">📂 GeoJSON追加</button>
-      <input type="file" id="geojsonFileInput" accept=".geojson,.json" style="display:none" onchange="importGeoJSONFile(this)">
     </div>
 
     <!-- Hazard legend -->
     <div class="hazard-legend" id="hazardLegend">
       <div class="hazard-legend-title">ハザードマップ凡例</div>
-      <div class="hazard-legend-item" id="leg-tsunami" style="display:none">
-        <span class="hl-swatch" style="background:rgba(0,120,255,.5);border:1px solid #0078ff"></span>津波浸水想定区域
-      </div>
-      <div class="hazard-legend-item" id="leg-flood" style="display:none">
-        <span class="hl-swatch" style="background:rgba(0,200,255,.4);border:1px solid #00c8ff"></span>洪水浸水想定区域
-      </div>
-      <div class="hazard-legend-item" id="leg-sediment" style="display:none">
-        <span class="hl-swatch" style="background:rgba(255,165,0,.4);border:1px solid #ffa500"></span>土砂災害警戒区域
-      </div>
-      <div class="hazard-source">出典: 国土地理院 ハザードマップポータル<br>※表示は模式的なものです</div>
+      <div id="hazard-legend-items"></div>
+      <div class="hazard-source">出典: 国土地理院 ハザードマップポータル</div>
     </div>
 
     <!-- Drag overlay -->
@@ -1105,13 +1124,14 @@ function applySettings(){
   CONFIG.hazard_display.tsunami=document.getElementById('cfg-hz-tsunami').checked;
   CONFIG.hazard_display.flood=document.getElementById('cfg-hz-flood').checked;
   CONFIG.hazard_display.sediment=document.getElementById('cfg-hz-sediment').checked;
-  // sync checkboxes in layer panel
-  document.getElementById('lyr-tsunami').checked=CONFIG.hazard_display.tsunami;
-  document.getElementById('lyr-flood').checked=CONFIG.hazard_display.flood;
-  document.getElementById('lyr-sediment').checked=CONFIG.hazard_display.sediment;
-  toggleHazardLayer('tsunami',CONFIG.hazard_display.tsunami);
-  toggleHazardLayer('flood',CONFIG.hazard_display.flood);
-  toggleHazardLayer('sediment',CONFIG.hazard_display.sediment);
+  // sync hazard tile layer checkboxes in layer panel
+  const hazardMap = {tsunami:'tsunami', flood:'flood', sediment:'doseki'};
+  Object.entries(hazardMap).forEach(([cfgKey,tileKey])=>{
+    const val=CONFIG.hazard_display[cfgKey];
+    const el=document.getElementById(HAZARD_TILES[tileKey].checkId);
+    if(el) el.checked=val;
+    toggleHazardLayer(tileKey, val);
+  });
   applyConfigToUI();
   closeSettings();
   showToast('シナリオを適用しました','success');
@@ -1164,118 +1184,64 @@ document.getElementById('settingsModal').addEventListener('click',function(e){
 });
 
 // ============================================================
-// HAZARD LAYERS (illustrative GeoJSON for Ishigaki City)
+// HAZARD TILE LAYERS  (国土地理院 ハザードマップポータル)
+// https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html
 // ============================================================
-const HAZARD_GEOJSON = {
-  tsunami: {
-    type:'FeatureCollection',
-    features:[{
-      type:'Feature',
-      properties:{name:'津波浸水想定区域（石垣市沿岸部）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.183,24.336],[124.210,24.336],[124.212,24.340],
-          [124.213,24.345],[124.210,24.350],[124.205,24.352],
-          [124.195,24.350],[124.188,24.348],[124.185,24.344],
-          [124.183,24.340],[124.183,24.336]
-        ]]
-      }
-    },{
-      type:'Feature',
-      properties:{name:'津波浸水想定（港湾周辺）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.183,24.335],[124.195,24.335],[124.195,24.338],
-          [124.190,24.340],[124.185,24.339],[124.183,24.337],[124.183,24.335]
-        ]]
-      }
-    }]
-  },
-  flood: {
-    type:'FeatureCollection',
-    features:[{
-      type:'Feature',
-      properties:{name:'洪水浸水想定区域（バンナ岳麓）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.190,24.345],[124.205,24.345],[124.208,24.350],
-          [124.208,24.358],[124.200,24.360],[124.193,24.357],
-          [124.188,24.353],[124.188,24.348],[124.190,24.345]
-        ]]
-      }
-    },{
-      type:'Feature',
-      properties:{name:'洪水浸水想定（市街地北部）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.193,24.353],[124.202,24.353],[124.204,24.358],
-          [124.198,24.360],[124.193,24.358],[124.193,24.353]
-        ]]
-      }
-    }]
-  },
-  sediment: {
-    type:'FeatureCollection',
-    features:[{
-      type:'Feature',
-      properties:{name:'土砂災害警戒区域（バンナ岳周辺）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.195,24.355],[124.210,24.355],[124.215,24.363],
-          [124.210,24.370],[124.200,24.368],[124.193,24.363],
-          [124.192,24.358],[124.195,24.355]
-        ]]
-      }
-    },{
-      type:'Feature',
-      properties:{name:'土砂災害警戒（於茂登岳南麓）'},
-      geometry:{
-        type:'Polygon',
-        coordinates:[[
-          [124.170,24.370],[124.185,24.368],[124.188,24.375],
-          [124.180,24.380],[124.172,24.375],[124.170,24.370]
-        ]]
-      }
-    }]
-  }
+const HAZARD_TILES = {
+  tsunami:    { url:'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png',    label:'津波浸水想定',         color:'#9b59b6', checkId:'lyr-tsunami'   },
+  flood:      { url:'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png', label:'洪水浸水想定（最大規模）', color:'#2980b9', checkId:'lyr-flood'     },
+  flood_l1:   { url:'https://disaportaldata.gsi.go.jp/raster/01_flood_l1_shinsuishin_newlegend_data/{z}/{x}/{y}.png', label:'洪水浸水想定（計画規模）', color:'#5dade2', checkId:'lyr-flood-l1'  },
+  hightide:   { url:'https://disaportaldata.gsi.go.jp/raster/03_hightide_l2_shinsuishin_data/{z}/{x}/{y}.png', label:'高潮浸水想定',         color:'#1abc9c', checkId:'lyr-hightide'  },
+  naisui:     { url:'https://disaportaldata.gsi.go.jp/raster/02_naisui_data/{z}/{x}/{y}.png',               label:'内水（雨水出水）浸水想定', color:'#48c9b0', checkId:'lyr-naisui'    },
+  doseki:     { url:'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png',      label:'土石流警戒区域',         color:'#e67e22', checkId:'lyr-doseki'    },
+  kyukeisha:  { url:'https://disaportaldata.gsi.go.jp/raster/05_kyukeishakeikaikuiki/{z}/{x}/{y}.png',      label:'急傾斜地崩壊警戒区域',   color:'#e74c3c', checkId:'lyr-kyukeisha' },
+  jisuberi:   { url:'https://disaportaldata.gsi.go.jp/raster/05_jisuberikeikaikuiki/{z}/{x}/{y}.png',       label:'地すべり警戒区域',       color:'#c0392b', checkId:'lyr-jisuberi'  },
 };
 
-const HAZARD_STYLE = {
-  tsunami: {color:'#0078ff', fillColor:'rgba(0,120,255,0.35)', fillOpacity:0.35, weight:2},
-  flood:   {color:'#00c8ff', fillColor:'rgba(0,200,255,0.3)',  fillOpacity:0.3,  weight:2},
-  sediment:{color:'#ffa500', fillColor:'rgba(255,165,0,0.35)', fillOpacity:0.35, weight:2}
-};
-
-const hazardLayers = {};  // key -> Leaflet layer
+const hazardTileLayers = {};  // key -> L.tileLayer instance
 
 function toggleHazardLayer(key, show){
   if(show){
-    if(!hazardLayers[key]){
-      hazardLayers[key] = L.geoJSON(HAZARD_GEOJSON[key],{
-        style: HAZARD_STYLE[key],
-        onEachFeature:(feat,layer)=>{
-          layer.bindTooltip(feat.properties.name,{sticky:true,className:'leaflet-tooltip-dark'});
-        }
-      }).addTo(map);
-    } else {
-      hazardLayers[key].addTo(map);
+    if(!hazardTileLayers[key]){
+      hazardTileLayers[key] = L.tileLayer(HAZARD_TILES[key].url, {
+        opacity: 0.75,
+        minZoom: 2,
+        maxZoom: 17,
+        attribution: '出典: <a href="https://disaportal.gsi.go.jp/" target="_blank">国土地理院 ハザードマップポータル</a>'
+      });
     }
+    hazardTileLayers[key].addTo(map);
   } else {
-    if(hazardLayers[key]) map.removeLayer(hazardLayers[key]);
+    if(hazardTileLayers[key]) map.removeLayer(hazardTileLayers[key]);
   }
-  // update legend
-  document.getElementById('leg-'+key).style.display = show ? 'flex' : 'none';
-  // show/hide legend box
-  const anyOn = ['tsunami','flood','sediment'].some(k=>{
-    const el=document.getElementById('lyr-'+k);
+  updateHazardLegend();
+}
+
+function updateHazardLegend(){
+  const active = Object.keys(HAZARD_TILES).filter(k=>{
+    const el=document.getElementById(HAZARD_TILES[k].checkId);
     return el && el.checked;
   });
-  document.getElementById('hazardLegend').classList.toggle('visible', anyOn);
+  const legendBox = document.getElementById('hazardLegend');
+  const itemsEl  = document.getElementById('hazard-legend-items');
+  if(active.length === 0){
+    legendBox.classList.remove('visible');
+    return;
+  }
+  legendBox.classList.add('visible');
+  itemsEl.innerHTML = active.map(k=>`
+    <div class="hazard-legend-item">
+      <span class="hl-swatch" style="background:${HAZARD_TILES[k].color};opacity:.8"></span>
+      ${HAZARD_TILES[k].label}
+    </div>`).join('');
+}
+
+function toggleLayerPanel(){
+  const body=document.getElementById('layerPanelBody');
+  const arrow=document.getElementById('layerPanelArrow');
+  const hidden=body.style.display==='none';
+  body.style.display=hidden?'':'none';
+  arrow.textContent=hidden?'▲':'▼';
 }
 
 // ============================================================
