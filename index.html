@@ -57,10 +57,24 @@ header .meta{font-size:11px;color:#8b949e}
 #map{flex:1}
 
 /* ── Timeline bar ── */
-.timeline-panel{background:#161b22;border-top:1px solid #30363d;padding:14px 24px;flex-shrink:0}
-.tl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.timeline-panel{background:#161b22;border-top:1px solid #30363d;padding:10px 24px 14px;flex-shrink:0}
+.tl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .tl-title{font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .tl-current{font-size:13px;color:#58a6ff;font-weight:700;background:rgba(88,166,255,.1);padding:3px 12px;border-radius:12px;border:1px solid rgba(88,166,255,.25)}
+
+/* ── Play controls ── */
+.play-controls{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.play-btn{display:flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;border:1px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.play-btn.primary{background:rgba(88,166,255,.12);border-color:#58a6ff;color:#58a6ff}
+.play-btn.primary:hover{background:rgba(88,166,255,.25)}
+.play-btn.primary.playing{background:rgba(255,166,87,.12);border-color:#ffa657;color:#ffa657}
+.play-btn.primary.playing:hover{background:rgba(255,166,87,.25)}
+.play-btn.secondary{background:#21262d;border-color:#30363d;color:#8b949e}
+.play-btn.secondary:hover{background:#2d333b;color:#c9d1d9}
+.speed-select{background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;padding:4px 8px;font-size:11px;cursor:pointer;outline:none}
+.play-progress{flex:1;height:3px;background:#21262d;border-radius:2px;overflow:hidden;cursor:pointer}
+.play-progress-bar{height:100%;background:linear-gradient(90deg,#58a6ff,#79c0ff);border-radius:2px;transition:width .1s linear;width:0%}
+.tl-anim-indicator{position:absolute;bottom:0;left:0;height:2px;background:#58a6ff;border-radius:1px;transition:width .3s ease;pointer-events:none}
 .tl-bar{position:relative;display:flex;align-items:center;justify-content:space-between}
 /* connector line */
 .tl-bar::before{content:'';position:absolute;top:50%;transform:translateY(-50%);left:28px;right:28px;height:2px;background:#30363d;z-index:0}
@@ -182,6 +196,12 @@ header .meta{font-size:11px;color:#8b949e}
 .hazard-toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .hazard-toggle-row input[type=checkbox]{accent-color:#58a6ff;width:14px;height:14px}
 .hazard-color-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* ── Opacity row ── */
+.opacity-row{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding:5px 6px;background:#0d1117;border-radius:5px}
+.opacity-row span{font-size:10px;color:#8b949e;white-space:nowrap}
+.opacity-row input[type=range]{flex:1;accent-color:#58a6ff;height:3px;cursor:pointer}
+.opacity-val{min-width:28px;text-align:right;font-size:10px;color:#58a6ff;font-weight:600}
 
 /* ── Layer control ── */
 .layer-ctrl{position:absolute;top:10px;right:10px;z-index:900;background:rgba(13,17,23,.97);border:1px solid #30363d;border-radius:10px;width:230px;box-shadow:0 4px 20px rgba(0,0,0,.5);overflow:hidden}
@@ -335,6 +355,11 @@ header .meta{font-size:11px;color:#8b949e}
         🗺️ ハザードマップ <span id="layerPanelArrow" style="margin-left:auto;font-size:10px">▲</span>
       </div>
       <div id="layerPanelBody" class="layer-ctrl-body">
+        <div class="opacity-row">
+          <span>透明度</span>
+          <input type="range" id="hazardOpacitySlider" min="10" max="100" value="75" oninput="setHazardOpacity(this.value)">
+          <span class="opacity-val" id="hazardOpacityVal">75%</span>
+        </div>
         <div class="layer-group-title">🌊 水害</div>
         <div class="layer-row">
           <input type="checkbox" id="lyr-tsunami" onchange="toggleHazardLayer('tsunami',this.checked)">
@@ -393,6 +418,20 @@ header .meta{font-size:11px;color:#8b949e}
       <div class="tl-header">
         <span class="tl-title">⏰ タイムライン</span>
         <span class="tl-current" id="tlCurrentLabel"></span>
+      </div>
+      <!-- 再生コントロール -->
+      <div class="play-controls">
+        <button id="playBtn" class="play-btn primary" onclick="togglePlay()">▶ 再生</button>
+        <button class="play-btn secondary" onclick="stopAnim()" title="停止して最初へ">⏹</button>
+        <select class="speed-select" id="speedSelect" onchange="setAnimSpeed(this.value)">
+          <option value="4000">🐢 ゆっくり</option>
+          <option value="2000" selected>▶ 普通</option>
+          <option value="1000">⚡ 速い</option>
+          <option value="400">🚀 最速</option>
+        </select>
+        <div class="play-progress" id="playProgress" onclick="scrubProgress(event)">
+          <div class="play-progress-bar" id="playProgressBar"></div>
+        </div>
       </div>
       <div class="tl-bar" id="tlBar"></div>
     </div>
@@ -1030,18 +1069,20 @@ function renderDetail(){
 }
 
 function expandSlot(slotId){
-  setSlot(slotId);
+  setSlot(slotId, false);   // user manually picks slot → stop animation
 }
 
 // ============================================================
 // INTERACTIONS
 // ============================================================
-function setSlot(id){
+function setSlot(id, fromAnim=false){
+  if(!fromAnim && isPlaying) pauseAnim();
   currentSlot=id;
   renderTimeline();
   renderList();
   renderDetail();
   updateMapClean();
+  updateProgressBar();
 }
 
 function selectAgent(id){
@@ -1199,16 +1240,27 @@ const HAZARD_TILES = {
 };
 
 const hazardTileLayers = {};  // key -> L.tileLayer instance
+let hazardOpacity = 0.75;
+
+function setHazardOpacity(val){
+  hazardOpacity = val / 100;
+  document.getElementById('hazardOpacityVal').textContent = val + '%';
+  Object.values(hazardTileLayers).forEach(layer => {
+    if(map.hasLayer(layer)) layer.setOpacity(hazardOpacity);
+  });
+}
 
 function toggleHazardLayer(key, show){
   if(show){
     if(!hazardTileLayers[key]){
       hazardTileLayers[key] = L.tileLayer(HAZARD_TILES[key].url, {
-        opacity: 0.75,
+        opacity: hazardOpacity,
         minZoom: 2,
         maxZoom: 17,
         attribution: '出典: <a href="https://disaportal.gsi.go.jp/" target="_blank">国土地理院 ハザードマップポータル</a>'
       });
+    } else {
+      hazardTileLayers[key].setOpacity(hazardOpacity);
     }
     hazardTileLayers[key].addTo(map);
   } else {
@@ -1242,6 +1294,116 @@ function toggleLayerPanel(){
   const hidden=body.style.display==='none';
   body.style.display=hidden?'':'none';
   arrow.textContent=hidden?'▲':'▼';
+}
+
+// ============================================================
+// ANIMATION
+// ============================================================
+let isPlaying   = false;
+let animTimer   = null;
+let animSpeed   = 2000;       // ms per slot (hold time + transition)
+const ANIM_TRANS = 700;       // ms for smooth marker movement
+
+function togglePlay(){
+  isPlaying ? pauseAnim() : startAnim();
+}
+
+function startAnim(){
+  if(currentSlot >= SLOTS.length - 1) setSlot(0, true);
+  isPlaying = true;
+  updatePlayBtn();
+  scheduleNext();
+}
+
+function pauseAnim(){
+  isPlaying = false;
+  clearTimeout(animTimer);
+  updatePlayBtn();
+}
+
+function stopAnim(){
+  pauseAnim();
+  setSlot(0, true);
+}
+
+function setAnimSpeed(val){
+  animSpeed = parseInt(val);
+}
+
+function updatePlayBtn(){
+  const btn = document.getElementById('playBtn');
+  if(!btn) return;
+  if(isPlaying){
+    btn.textContent = '⏸ 一時停止';
+    btn.classList.add('playing');
+  } else {
+    btn.textContent = '▶ 再生';
+    btn.classList.remove('playing');
+  }
+}
+
+function updateProgressBar(){
+  const bar = document.getElementById('playProgressBar');
+  if(!bar) return;
+  bar.style.width = (currentSlot / (SLOTS.length - 1) * 100) + '%';
+}
+
+function scrubProgress(e){
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const slot = Math.round(ratio * (SLOTS.length - 1));
+  setSlot(slot);
+}
+
+function scheduleNext(){
+  const holdTime = Math.max(animSpeed - ANIM_TRANS, 100);
+  animTimer = setTimeout(()=>{
+    if(!isPlaying) return;
+    const next = currentSlot + 1;
+    if(next >= SLOTS.length){
+      pauseAnim();
+      return;
+    }
+    animateToSlot(next);
+  }, holdTime);
+}
+
+function animateToSlot(targetSlot){
+  // Snapshot positions before changing slot
+  const fromPos = {};
+  AGENTS.forEach(a => { fromPos[a.id] = computePositionAtSlot(a, currentSlot); });
+  const toPos   = {};
+  AGENTS.forEach(a => { toPos[a.id]   = computePositionAtSlot(a, targetSlot); });
+
+  // Advance UI state immediately (timeline, list, detail)
+  currentSlot = targetSlot;
+  renderTimeline();
+  renderList();
+  renderDetail();
+  updateProgressBar();
+
+  const duration  = Math.min(ANIM_TRANS, animSpeed * 0.6);
+  const startTime = performance.now();
+  function ease(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function frame(now){
+    const t = Math.min((now - startTime) / duration, 1);
+    const e = ease(t);
+    AGENTS.forEach(a=>{
+      const mk = markers[a.id];
+      if(!mk) return;
+      const f = fromPos[a.id];
+      const d = toPos[a.id];
+      mk.setLatLng([f[0]+(d[0]-f[0])*e, f[1]+(d[1]-f[1])*e]);
+    });
+    if(t < 1){
+      requestAnimationFrame(frame);
+    } else {
+      updateMapClean();          // finalize at correct positions
+      if(isPlaying) scheduleNext();
+    }
+  }
+  requestAnimationFrame(frame);
 }
 
 // ============================================================
@@ -1346,6 +1508,7 @@ renderTimeline();
 renderList();
 updateMapClean();
 applyConfigToUI();
+updateProgressBar();
 </script>
 </body>
 </html>
