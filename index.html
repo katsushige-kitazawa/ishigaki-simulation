@@ -131,6 +131,98 @@ header .meta{font-size:11px;color:#8b949e}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+
+/* ── Settings button ── */
+.settings-btn{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:#58a6ff;padding:4px 12px;border-radius:8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:all .2s}
+.settings-btn:hover{background:rgba(88,166,255,.2)}
+
+/* ── Modal overlay ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#161b22;border:1px solid #30363d;border-radius:12px;width:900px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal-hdr{padding:14px 18px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-hdr-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.modal-close-btn{cursor:pointer;color:#8b949e;font-size:18px;padding:2px 8px;border-radius:4px;border:1px solid #30363d;line-height:1}
+.modal-close-btn:hover{background:#21262d;color:#e6edf3}
+.modal-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.modal-form{width:320px;overflow-y:auto;padding:16px;border-right:1px solid #30363d;flex-shrink:0}
+.modal-preview{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.preview-hdr{padding:10px 14px;border-bottom:1px solid #30363d;font-size:11px;color:#8b949e;font-weight:600;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.preview-body{flex:1;overflow-y:auto;padding:14px}
+.preview-body pre{font-size:11px;color:#c9d1d9;line-height:1.7;white-space:pre-wrap;word-break:break-all;font-family:'Courier New',monospace}
+.modal-ftr{padding:12px 18px;border-top:1px solid #30363d;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.btn{padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
+.btn-primary{background:rgba(88,166,255,.15);border-color:#58a6ff;color:#58a6ff}
+.btn-primary:hover{background:rgba(88,166,255,.25)}
+.btn-secondary{background:#21262d;border-color:#30363d;color:#c9d1d9}
+.btn-secondary:hover{background:#2d333b}
+.btn-danger{background:rgba(248,81,73,.1);border-color:#f85149;color:#f85149}
+.btn-danger:hover{background:rgba(248,81,73,.2)}
+
+/* Form fields */
+.form-section{margin-bottom:14px}
+.form-section label{display:block;font-size:11px;color:#8b949e;margin-bottom:4px;font-weight:600}
+.form-section-title{font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #21262d}
+.form-row{margin-bottom:8px}
+.form-label{font-size:11px;color:#8b949e;margin-bottom:3px;display:block}
+.form-input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:6px 9px;font-size:12px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:#58a6ff}
+.form-select{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:6px 9px;font-size:12px;outline:none;cursor:pointer}
+.form-range-wrap{display:flex;align-items:center;gap:8px}
+.form-range{flex:1;accent-color:#58a6ff}
+.form-range-val{font-size:12px;color:#58a6ff;font-weight:700;min-width:20px;text-align:right}
+.form-textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:6px 9px;font-size:11px;outline:none;resize:vertical;line-height:1.6}
+.form-textarea:focus{border-color:#58a6ff}
+.event-item{display:flex;gap:6px;margin-bottom:5px}
+.event-item input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:5px 8px;font-size:11px;outline:none}
+.event-remove{background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:4px;cursor:pointer;padding:4px 8px;font-size:12px}
+.event-remove:hover{border-color:#f85149;color:#f85149}
+.add-event-btn{font-size:11px;color:#58a6ff;background:transparent;border:1px dashed #30363d;border-radius:5px;padding:5px 10px;cursor:pointer;width:100%;margin-top:3px}
+.add-event-btn:hover{border-color:#58a6ff;background:rgba(88,166,255,.05)}
+.hazard-toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hazard-toggle-row input[type=checkbox]{accent-color:#58a6ff;width:14px;height:14px}
+.hazard-color-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* ── Layer control ── */
+.layer-ctrl{position:absolute;top:10px;right:10px;z-index:900;background:rgba(22,27,34,.96);border:1px solid #30363d;border-radius:10px;min-width:210px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden}
+.layer-ctrl-hdr{padding:9px 12px;border-bottom:1px solid #30363d;font-size:11px;font-weight:600;color:#8b949e;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.layer-ctrl-hdr:hover{background:#1c2128}
+.layer-ctrl-body{padding:8px 12px}
+.layer-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;cursor:pointer;border-radius:4px;padding:5px 6px;transition:background .15s}
+.layer-row:hover{background:#1c2128}
+.layer-row input[type=checkbox]{accent-color:#58a6ff;width:13px;height:13px;flex-shrink:0}
+.layer-color{width:14px;height:14px;border-radius:3px;flex-shrink:0;opacity:.8}
+.layer-divider{border:none;border-top:1px solid #21262d;margin:6px 0}
+.imported-layer{display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:11px;background:#0d1117;border-radius:5px;margin-bottom:4px}
+.imported-layer .il-name{flex:1;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imported-layer .il-remove{background:transparent;border:none;color:#8b949e;cursor:pointer;font-size:13px;padding:0 3px}
+.imported-layer .il-remove:hover{color:#f85149}
+.geojson-drop-btn{width:100%;padding:6px;font-size:11px;color:#8b949e;background:#0d1117;border:1px dashed #30363d;border-radius:5px;cursor:pointer;text-align:center;margin-top:4px;transition:all .2s}
+.geojson-drop-btn:hover{border-color:#58a6ff;color:#58a6ff}
+
+/* ── Map drag overlay ── */
+.map-drag-overlay{position:absolute;inset:0;z-index:800;background:rgba(88,166,255,.1);border:3px dashed #58a6ff;display:none;align-items:center;justify-content:center;pointer-events:none}
+.map-drag-overlay.active{display:flex}
+.map-drag-overlay span{font-size:18px;color:#58a6ff;font-weight:700;background:rgba(22,27,34,.9);padding:16px 28px;border-radius:10px}
+
+/* ── Hazard legend ── */
+.hazard-legend{position:absolute;bottom:110px;left:10px;z-index:900;background:rgba(22,27,34,.95);border:1px solid #30363d;border-radius:8px;padding:10px 12px;min-width:180px;display:none}
+.hazard-legend.visible{display:block}
+.hazard-legend-title{font-size:10px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:7px;letter-spacing:.5px}
+.hazard-legend-item{display:flex;align-items:center;gap:7px;font-size:11px;color:#c9d1d9;margin-bottom:4px}
+.hl-swatch{width:16px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── Toast ── */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;font-size:12px;color:#e6edf3;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;animation:slideIn .25s ease;max-width:320px}
+.toast.success{border-color:#3fb950;color:#3fb950}
+.toast.error{border-color:#f85149;color:#f85149}
+.toast.info{border-color:#58a6ff;color:#58a6ff}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{to{transform:translateX(40px);opacity:0}}
+
+/* ── Source note ── */
+.hazard-source{font-size:9px;color:#8b949e;margin-top:6px;padding-top:5px;border-top:1px solid #21262d;line-height:1.5}
 </style>
 </head>
 <body>
@@ -143,8 +235,81 @@ header .meta{font-size:11px;color:#8b949e}
     <span class="stat-pill migrant">🌱 移住者 <span id="cnt-migrant">6</span></span>
     <span class="stat-pill tourist">✈️ 観光客 <span id="cnt-tourist">12</span></span>
   </div>
-  <span class="weather-badge">☀️ 晴れ・25℃・南風</span>
+  <span class="weather-badge" id="weatherBadge">☀️ 晴れ・25℃・南風</span>
+  <button class="settings-btn" onclick="openSettings()" title="シナリオ設定">⚙️ 設定</button>
 </header>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-hdr-title">⚙️ シナリオ設定</span>
+      <button class="modal-close-btn" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form">
+        <div class="form-section">
+          <label>シナリオ名</label>
+          <input class="form-input" id="cfg-name" type="text">
+        </div>
+        <div class="form-section">
+          <label>日付</label>
+          <input class="form-input" id="cfg-date" type="date">
+        </div>
+        <div class="form-section">
+          <label>天気</label>
+          <select class="form-input" id="cfg-weather">
+            <option value="晴れ">☀️ 晴れ</option>
+            <option value="曇り">☁️ 曇り</option>
+            <option value="雨">🌧️ 雨</option>
+            <option value="台風">🌀 台風</option>
+          </select>
+        </div>
+        <div class="form-section">
+          <label>気温 (℃) <span id="cfg-temp-val"></span></label>
+          <input class="form-range" id="cfg-temp" type="range" min="10" max="38" oninput="document.getElementById('cfg-temp-val').textContent=this.value+'℃'">
+        </div>
+        <div class="form-section">
+          <label>観光レベル</label>
+          <select class="form-input" id="cfg-tourism">
+            <option value="low">低（閑散期）</option>
+            <option value="medium">中（通常期）</option>
+            <option value="high">高（ハイシーズン）</option>
+          </select>
+        </div>
+        <div class="form-section">
+          <label>宿泊稼働率 <span id="cfg-acc-val"></span></label>
+          <input class="form-range" id="cfg-acc" type="range" min="0" max="100" oninput="document.getElementById('cfg-acc-val').textContent=this.value+'%'">
+        </div>
+        <div class="form-section">
+          <label>特別イベント（1行1件）</label>
+          <textarea class="form-input" id="cfg-events" rows="3" style="resize:vertical"></textarea>
+        </div>
+        <div class="form-section">
+          <label>備考</label>
+          <textarea class="form-input" id="cfg-notes" rows="2" style="resize:vertical"></textarea>
+        </div>
+        <div class="form-section">
+          <label>ハザードマップ表示</label>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="cfg-hz-tsunami"> 🌊 津波浸水想定区域</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="cfg-hz-flood"> 💧 洪水浸水想定区域</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="cfg-hz-sediment"> ⛰️ 土砂災害警戒区域</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="applySettings()">✅ 適用</button>
+          <button class="btn btn-secondary" onclick="downloadScenarioMd()">📥 scenario.md をダウンロード</button>
+          <label class="btn btn-secondary" style="cursor:pointer">📂 読み込む<input type="file" accept=".md,.json" style="display:none" onchange="loadScenarioFile(this)"></label>
+        </div>
+      </div>
+      <div class="modal-preview" style="padding:14px;overflow-y:auto">
+        <div class="preview-hdr" style="padding:0;border:none;margin-bottom:8px">📋 scenario.md プレビュー</div>
+        <pre id="scenarioPreview"></pre>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="main">
   <!-- Sidebar -->
@@ -160,8 +325,51 @@ header .meta{font-size:11px;color:#8b949e}
   </div>
 
   <!-- Map + Timeline -->
-  <div class="map-wrap">
+  <div class="map-wrap" id="mapWrap">
     <div id="map"></div>
+
+    <!-- Layer control -->
+    <div class="layer-ctrl" id="layerCtrl">
+      <div class="layer-ctrl-hdr">🗺️ レイヤー</div>
+      <div class="layer-row">
+        <input type="checkbox" id="lyr-tsunami" onchange="toggleHazardLayer('tsunami',this.checked)">
+        <label for="lyr-tsunami"><span class="hl-swatch" style="background:rgba(0,120,255,.5);border:1px solid #0078ff"></span>津波浸水</label>
+      </div>
+      <div class="layer-row">
+        <input type="checkbox" id="lyr-flood" onchange="toggleHazardLayer('flood',this.checked)">
+        <label for="lyr-flood"><span class="hl-swatch" style="background:rgba(0,200,255,.4);border:1px solid #00c8ff"></span>洪水浸水</label>
+      </div>
+      <div class="layer-row">
+        <input type="checkbox" id="lyr-sediment" onchange="toggleHazardLayer('sediment',this.checked)">
+        <label for="lyr-sediment"><span class="hl-swatch" style="background:rgba(255,165,0,.4);border:1px solid #ffa500"></span>土砂災害</label>
+      </div>
+      <div style="border-top:1px solid #30363d;margin:6px 0;padding-top:6px">
+        <div style="font-size:10px;color:#8b949e;margin-bottom:5px">インポート済み</div>
+        <div id="importedLayersList" style="font-size:10px;color:#8b949e">なし</div>
+      </div>
+      <button class="geojson-drop-btn" onclick="document.getElementById('geojsonFileInput').click()">📂 GeoJSON追加</button>
+      <input type="file" id="geojsonFileInput" accept=".geojson,.json" style="display:none" onchange="importGeoJSONFile(this)">
+    </div>
+
+    <!-- Hazard legend -->
+    <div class="hazard-legend" id="hazardLegend">
+      <div class="hazard-legend-title">ハザードマップ凡例</div>
+      <div class="hazard-legend-item" id="leg-tsunami" style="display:none">
+        <span class="hl-swatch" style="background:rgba(0,120,255,.5);border:1px solid #0078ff"></span>津波浸水想定区域
+      </div>
+      <div class="hazard-legend-item" id="leg-flood" style="display:none">
+        <span class="hl-swatch" style="background:rgba(0,200,255,.4);border:1px solid #00c8ff"></span>洪水浸水想定区域
+      </div>
+      <div class="hazard-legend-item" id="leg-sediment" style="display:none">
+        <span class="hl-swatch" style="background:rgba(255,165,0,.4);border:1px solid #ffa500"></span>土砂災害警戒区域
+      </div>
+      <div class="hazard-source">出典: 国土地理院 ハザードマップポータル<br>※表示は模式的なものです</div>
+    </div>
+
+    <!-- Drag overlay -->
+    <div class="map-drag-overlay" id="mapDragOverlay">
+      <span>📂 GeoJSONをここにドロップ</span>
+    </div>
     <div class="timeline-panel">
       <div class="tl-header">
         <span class="tl-title">⏰ タイムライン</span>
@@ -180,6 +388,9 @@ header .meta{font-size:11px;color:#8b949e}
     <div class="detail-body" id="detailBody"></div>
   </div>
 </div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
 // ============================================================
@@ -833,12 +1044,342 @@ function setFilter(type,el){
 }
 
 // ============================================================
+// SCENARIO CONFIG
+// ============================================================
+let CONFIG = {
+  scenario_name: '石垣島 春の観光シーズン',
+  date: '2026-03-23',
+  day_of_week: '月曜日',
+  weather: {condition:'晴れ', temperature:25, wind:'南風'},
+  season: '春',
+  agents: {locals:12, migrants:6, tourists:12},
+  special_events: ['川平湾シュノーケルツアー開催中','公設市場は朝8時から営業','離島ターミナル近くで夕日が美しい'],
+  economy: {tourism_level:'high', fishing_conditions:'良好', accommodation_rate:0.85},
+  hazard_display: {tsunami:false, flood:false, sediment:false},
+  notes: '春の観光シーズン。本土からの観光客が増加している時期。'
+};
+
+const WEATHER_ICONS = {晴れ:'☀️',曇り:'☁️',雨:'🌧️',台風:'🌀'};
+
+function applyConfigToUI(){
+  const w=CONFIG.weather;
+  const icon=WEATHER_ICONS[w.condition]||'🌤️';
+  document.getElementById('weatherBadge').textContent=`${icon} ${w.condition}・${w.temperature}℃・${w.wind}`;
+}
+
+// ── Settings modal ──────────────────────────────────────────
+function openSettings(){
+  // populate form
+  document.getElementById('cfg-name').value=CONFIG.scenario_name;
+  document.getElementById('cfg-date').value=CONFIG.date;
+  document.getElementById('cfg-weather').value=CONFIG.weather.condition;
+  const tempEl=document.getElementById('cfg-temp');
+  tempEl.value=CONFIG.weather.temperature;
+  document.getElementById('cfg-temp-val').textContent=CONFIG.weather.temperature+'℃';
+  document.getElementById('cfg-tourism').value=CONFIG.economy.tourism_level;
+  const accEl=document.getElementById('cfg-acc');
+  accEl.value=Math.round(CONFIG.economy.accommodation_rate*100);
+  document.getElementById('cfg-acc-val').textContent=Math.round(CONFIG.economy.accommodation_rate*100)+'%';
+  document.getElementById('cfg-events').value=CONFIG.special_events.join('\n');
+  document.getElementById('cfg-notes').value=CONFIG.notes||'';
+  document.getElementById('cfg-hz-tsunami').checked=CONFIG.hazard_display.tsunami;
+  document.getElementById('cfg-hz-flood').checked=CONFIG.hazard_display.flood;
+  document.getElementById('cfg-hz-sediment').checked=CONFIG.hazard_display.sediment;
+  updateScenarioPreview();
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+
+function closeSettings(){
+  document.getElementById('settingsModal').classList.add('hidden');
+}
+
+function applySettings(){
+  CONFIG.scenario_name=document.getElementById('cfg-name').value;
+  CONFIG.date=document.getElementById('cfg-date').value;
+  CONFIG.weather.condition=document.getElementById('cfg-weather').value;
+  CONFIG.weather.temperature=parseInt(document.getElementById('cfg-temp').value);
+  CONFIG.economy.tourism_level=document.getElementById('cfg-tourism').value;
+  CONFIG.economy.accommodation_rate=parseInt(document.getElementById('cfg-acc').value)/100;
+  CONFIG.special_events=document.getElementById('cfg-events').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  CONFIG.notes=document.getElementById('cfg-notes').value;
+  CONFIG.hazard_display.tsunami=document.getElementById('cfg-hz-tsunami').checked;
+  CONFIG.hazard_display.flood=document.getElementById('cfg-hz-flood').checked;
+  CONFIG.hazard_display.sediment=document.getElementById('cfg-hz-sediment').checked;
+  // sync checkboxes in layer panel
+  document.getElementById('lyr-tsunami').checked=CONFIG.hazard_display.tsunami;
+  document.getElementById('lyr-flood').checked=CONFIG.hazard_display.flood;
+  document.getElementById('lyr-sediment').checked=CONFIG.hazard_display.sediment;
+  toggleHazardLayer('tsunami',CONFIG.hazard_display.tsunami);
+  toggleHazardLayer('flood',CONFIG.hazard_display.flood);
+  toggleHazardLayer('sediment',CONFIG.hazard_display.sediment);
+  applyConfigToUI();
+  closeSettings();
+  showToast('シナリオを適用しました','success');
+}
+
+function buildScenarioMd(){
+  const json=JSON.stringify(CONFIG,null,2);
+  return `# 石垣島 社会シミュレーション — シナリオ設定ファイル\n\n\`\`\`json\n${json}\n\`\`\`\n`;
+}
+
+function updateScenarioPreview(){
+  document.getElementById('scenarioPreview').textContent=buildScenarioMd();
+}
+
+function downloadScenarioMd(){
+  const blob=new Blob([buildScenarioMd()],{type:'text/markdown'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='scenario.md';
+  a.click();
+  showToast('scenario.md をダウンロードしました','success');
+}
+
+function loadScenarioFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=e.target.result;
+      let parsed=null;
+      // try JSON block in markdown
+      const m=text.match(/```json\n([\s\S]*?)\n```/);
+      if(m) parsed=JSON.parse(m[1]);
+      else parsed=JSON.parse(text);
+      CONFIG=Object.assign(CONFIG,parsed);
+      openSettings(); // refresh form
+      showToast('シナリオを読み込みました','success');
+    }catch(err){
+      showToast('ファイルの読み込みに失敗しました: '+err.message,'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+// ── Close modal on backdrop click ──
+document.getElementById('settingsModal').addEventListener('click',function(e){
+  if(e.target===this) closeSettings();
+});
+
+// ============================================================
+// HAZARD LAYERS (illustrative GeoJSON for Ishigaki City)
+// ============================================================
+const HAZARD_GEOJSON = {
+  tsunami: {
+    type:'FeatureCollection',
+    features:[{
+      type:'Feature',
+      properties:{name:'津波浸水想定区域（石垣市沿岸部）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.183,24.336],[124.210,24.336],[124.212,24.340],
+          [124.213,24.345],[124.210,24.350],[124.205,24.352],
+          [124.195,24.350],[124.188,24.348],[124.185,24.344],
+          [124.183,24.340],[124.183,24.336]
+        ]]
+      }
+    },{
+      type:'Feature',
+      properties:{name:'津波浸水想定（港湾周辺）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.183,24.335],[124.195,24.335],[124.195,24.338],
+          [124.190,24.340],[124.185,24.339],[124.183,24.337],[124.183,24.335]
+        ]]
+      }
+    }]
+  },
+  flood: {
+    type:'FeatureCollection',
+    features:[{
+      type:'Feature',
+      properties:{name:'洪水浸水想定区域（バンナ岳麓）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.190,24.345],[124.205,24.345],[124.208,24.350],
+          [124.208,24.358],[124.200,24.360],[124.193,24.357],
+          [124.188,24.353],[124.188,24.348],[124.190,24.345]
+        ]]
+      }
+    },{
+      type:'Feature',
+      properties:{name:'洪水浸水想定（市街地北部）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.193,24.353],[124.202,24.353],[124.204,24.358],
+          [124.198,24.360],[124.193,24.358],[124.193,24.353]
+        ]]
+      }
+    }]
+  },
+  sediment: {
+    type:'FeatureCollection',
+    features:[{
+      type:'Feature',
+      properties:{name:'土砂災害警戒区域（バンナ岳周辺）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.195,24.355],[124.210,24.355],[124.215,24.363],
+          [124.210,24.370],[124.200,24.368],[124.193,24.363],
+          [124.192,24.358],[124.195,24.355]
+        ]]
+      }
+    },{
+      type:'Feature',
+      properties:{name:'土砂災害警戒（於茂登岳南麓）'},
+      geometry:{
+        type:'Polygon',
+        coordinates:[[
+          [124.170,24.370],[124.185,24.368],[124.188,24.375],
+          [124.180,24.380],[124.172,24.375],[124.170,24.370]
+        ]]
+      }
+    }]
+  }
+};
+
+const HAZARD_STYLE = {
+  tsunami: {color:'#0078ff', fillColor:'rgba(0,120,255,0.35)', fillOpacity:0.35, weight:2},
+  flood:   {color:'#00c8ff', fillColor:'rgba(0,200,255,0.3)',  fillOpacity:0.3,  weight:2},
+  sediment:{color:'#ffa500', fillColor:'rgba(255,165,0,0.35)', fillOpacity:0.35, weight:2}
+};
+
+const hazardLayers = {};  // key -> Leaflet layer
+
+function toggleHazardLayer(key, show){
+  if(show){
+    if(!hazardLayers[key]){
+      hazardLayers[key] = L.geoJSON(HAZARD_GEOJSON[key],{
+        style: HAZARD_STYLE[key],
+        onEachFeature:(feat,layer)=>{
+          layer.bindTooltip(feat.properties.name,{sticky:true,className:'leaflet-tooltip-dark'});
+        }
+      }).addTo(map);
+    } else {
+      hazardLayers[key].addTo(map);
+    }
+  } else {
+    if(hazardLayers[key]) map.removeLayer(hazardLayers[key]);
+  }
+  // update legend
+  document.getElementById('leg-'+key).style.display = show ? 'flex' : 'none';
+  // show/hide legend box
+  const anyOn = ['tsunami','flood','sediment'].some(k=>{
+    const el=document.getElementById('lyr-'+k);
+    return el && el.checked;
+  });
+  document.getElementById('hazardLegend').classList.toggle('visible', anyOn);
+}
+
+// ============================================================
+// GEOJSON IMPORT
+// ============================================================
+const importedLayers = [];
+
+function importGeoJSONFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const geo=JSON.parse(e.target.result);
+      addImportedGeoJSON(geo, file.name);
+    }catch(err){
+      showToast('GeoJSONの解析に失敗: '+err.message,'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+function addImportedGeoJSON(geo, name){
+  const colors=['#ff6b9d','#c084fc','#34d399','#fbbf24','#60a5fa'];
+  const color=colors[importedLayers.length % colors.length];
+  const layer=L.geoJSON(geo,{
+    style:{color,fillColor:color,fillOpacity:0.25,weight:2},
+    pointToLayer:(feat,latlng)=>L.circleMarker(latlng,{radius:6,color,fillColor:color,fillOpacity:.7,weight:2}),
+    onEachFeature:(feat,l)=>{
+      const props=feat.properties;
+      if(props){
+        const tip=Object.entries(props).slice(0,4).map(([k,v])=>`<b>${k}</b>: ${v}`).join('<br>');
+        l.bindPopup(tip||name);
+      }
+    }
+  }).addTo(map);
+  importedLayers.push({name,layer,color});
+  updateImportedList();
+  showToast(`${name} を追加しました`,'success');
+}
+
+function updateImportedList(){
+  const el=document.getElementById('importedLayersList');
+  if(importedLayers.length===0){el.textContent='なし';return;}
+  el.innerHTML=importedLayers.map((l,i)=>`
+    <div class="imported-layer">
+      <span class="hl-swatch" style="background:${l.color}"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</span>
+      <button onclick="removeImportedLayer(${i})" style="background:none;border:none;color:#8b949e;cursor:pointer;padding:0 2px">✕</button>
+    </div>`).join('');
+}
+
+function removeImportedLayer(idx){
+  map.removeLayer(importedLayers[idx].layer);
+  importedLayers.splice(idx,1);
+  updateImportedList();
+  showToast('レイヤーを削除しました','info');
+}
+
+// ── Drag & drop on map ──────────────────────────────────────
+const mapWrap=document.getElementById('mapWrap');
+const dragOverlay=document.getElementById('mapDragOverlay');
+
+mapWrap.addEventListener('dragover',e=>{e.preventDefault();dragOverlay.classList.add('active');});
+mapWrap.addEventListener('dragleave',e=>{if(!mapWrap.contains(e.relatedTarget))dragOverlay.classList.remove('active');});
+mapWrap.addEventListener('drop',e=>{
+  e.preventDefault();
+  dragOverlay.classList.remove('active');
+  const file=e.dataTransfer.files[0];
+  if(!file)return;
+  if(!file.name.match(/\.(geojson|json)$/i)){showToast('GeoJSON/JSONファイルのみ対応です','error');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{addImportedGeoJSON(JSON.parse(ev.target.result),file.name);}
+    catch(err){showToast('GeoJSONの解析に失敗: '+err.message,'error');}
+  };
+  reader.readAsText(file);
+});
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type='info', duration=3000){
+  const container=document.getElementById('toastContainer');
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  el.innerHTML=`<span>${icons[type]||''}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(()=>{
+    el.style.animation='fadeOut .3s ease forwards';
+    setTimeout(()=>el.remove(),300);
+  },duration);
+}
+
+// ============================================================
 // INIT
 // ============================================================
 initMap();
 renderTimeline();
 renderList();
 updateMapClean();
+applyConfigToUI();
 </script>
 </body>
 </html>
