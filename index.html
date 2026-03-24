@@ -244,6 +244,18 @@ header .meta{font-size:11px;color:#8b949e}
 
 /* ── Source note ── */
 .hazard-source{font-size:9px;color:#8b949e;margin-top:6px;padding-top:5px;border-top:1px solid #21262d;line-height:1.5}
+
+/* ── Facility popup ── */
+.fac-popup-wrap .leaflet-popup-content-wrapper{background:#161b22;border:1px solid #30363d;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.fac-popup-wrap .leaflet-popup-tip{background:#161b22}
+.fac-popup-wrap .leaflet-popup-content{margin:12px 14px;min-width:220px}
+.fac-title{font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:4px}
+.fac-cat{font-size:11px;color:#8b949e;margin-bottom:5px}
+.fac-rating{font-size:13px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.fac-row{font-size:11px;color:#c9d1d9;margin-bottom:3px;display:flex;align-items:flex-start;gap:5px}
+.fac-note{font-size:11px;color:#8b949e;line-height:1.65;margin:7px 0;padding:7px 8px;background:#0d1117;border-radius:6px;border-left:2px solid #30363d}
+.fac-link{display:inline-block;margin-top:6px;font-size:11px;color:#58a6ff;text-decoration:none;padding:4px 10px;border:1px solid rgba(88,166,255,.3);border-radius:5px;background:rgba(88,166,255,.07)}
+.fac-link:hover{background:rgba(88,166,255,.18)}
 </style>
 </head>
 <body>
@@ -393,6 +405,12 @@ header .meta{font-size:11px;color:#8b949e}
         <div class="layer-row">
           <input type="checkbox" id="lyr-jisuberi" onchange="toggleHazardLayer('jisuberi',this.checked)">
           <label for="lyr-jisuberi"><span class="lyr-dot" style="background:#c0392b"></span>地すべり警戒区域</label>
+        </div>
+        <div style="border-top:1px solid #30363d;margin:8px 0 6px"></div>
+        <div class="layer-group-title">🏪 施設情報</div>
+        <div class="layer-row">
+          <input type="checkbox" id="lyr-facility" onchange="toggleFacilityLayer(this.checked)">
+          <label for="lyr-facility"><span class="lyr-dot" style="background:#e67e22"></span>レストラン・施設を表示</label>
         </div>
         <div style="border-top:1px solid #30363d;margin:8px 0 6px"></div>
         <div class="layer-group-title">📂 GeoJSONインポート</div>
@@ -1297,28 +1315,47 @@ function toggleLayerPanel(){
 }
 
 // ============================================================
-// ANIMATION
+// ANIMATION  (連続 requestAnimationFrame 方式)
 // ============================================================
-let isPlaying   = false;
-let animTimer   = null;
-let animSpeed   = 2000;       // ms per slot (hold time + transition)
-const ANIM_TRANS = 700;       // ms for smooth marker movement
+let isPlaying    = false;
+let animRAF      = null;
+let animSpeed    = 2000;    // ms per slot
+let animBaseTime = null;    // performance.now() when current anim segment started
+let animBaseSlot = 0;       // slot float at animBaseTime
 
-function togglePlay(){
-  isPlaying ? pauseAnim() : startAnim();
+// Easing: agents travel during first TRAVEL fraction of each slot, then linger
+const TRAVEL = 0.55;
+function arrivalEase(t){
+  if(t >= TRAVEL) return 1.0;
+  const u = t / TRAVEL;
+  return 3*u*u - 2*u*u*u;   // smoothstep
 }
 
+function togglePlay(){ isPlaying ? pauseAnim() : startAnim(); }
+
 function startAnim(){
-  if(currentSlot >= SLOTS.length - 1) setSlot(0, true);
-  isPlaying = true;
+  if(currentSlot >= SLOTS.length - 1){
+    // restart from beginning
+    currentSlot = 0;
+    renderTimeline(); renderList(); renderDetail(); updateMapClean();
+  }
+  isPlaying    = true;
+  animBaseSlot = currentSlot;
+  animBaseTime = performance.now();
   updatePlayBtn();
-  scheduleNext();
+  if(animRAF) cancelAnimationFrame(animRAF);
+  animRAF = requestAnimationFrame(animFrame);
 }
 
 function pauseAnim(){
   isPlaying = false;
-  clearTimeout(animTimer);
+  if(animRAF){ cancelAnimationFrame(animRAF); animRAF = null; }
   updatePlayBtn();
+  // Snap all markers to correct discrete positions
+  AGENTS.forEach(a=>{
+    const mk = markers[a.id];
+    if(mk) mk.setLatLng(computePositionAtSlot(a, currentSlot));
+  });
 }
 
 function stopAnim(){
@@ -1327,83 +1364,307 @@ function stopAnim(){
 }
 
 function setAnimSpeed(val){
-  animSpeed = parseInt(val);
+  if(isPlaying){
+    // Rebase: keep slotFloat continuous when speed changes
+    const elapsed   = performance.now() - animBaseTime;
+    const slotFloat = animBaseSlot + elapsed / animSpeed;
+    animSpeed       = parseInt(val);
+    animBaseTime    = performance.now();
+    animBaseSlot    = slotFloat;
+  } else {
+    animSpeed = parseInt(val);
+  }
+}
+
+function animFrame(now){
+  if(!isPlaying) return;
+
+  const elapsed   = now - animBaseTime;
+  const slotFloat = animBaseSlot + elapsed / animSpeed;
+
+  if(slotFloat >= SLOTS.length - 1){
+    // Reached the end – snap to last slot and stop
+    AGENTS.forEach(a=>{
+      const mk = markers[a.id];
+      if(mk) mk.setLatLng(computePositionAtSlot(a, SLOTS.length - 1));
+    });
+    currentSlot = SLOTS.length - 1;
+    renderTimeline(); renderList(); renderDetail();
+    updateProgressBarRaw(1);
+    pauseAnim();
+    return;
+  }
+
+  const slotIdx = Math.floor(slotFloat);
+  const t       = slotFloat - slotIdx;   // [0,1] within current slot
+  const e       = arrivalEase(t);
+
+  // Trigger UI update when crossing a slot boundary
+  if(slotIdx !== currentSlot){
+    currentSlot = slotIdx;
+    renderTimeline(); renderList(); renderDetail();
+  }
+
+  updateProgressBarRaw(slotFloat / (SLOTS.length - 1));
+
+  // Smoothly interpolate every marker
+  const nextIdx = slotIdx + 1;
+  AGENTS.forEach(a=>{
+    const mk = markers[a.id];
+    if(!mk) return;
+    const f = computePositionAtSlot(a, slotIdx);
+    const d = computePositionAtSlot(a, nextIdx);
+    mk.setLatLng([f[0]+(d[0]-f[0])*e, f[1]+(d[1]-f[1])*e]);
+  });
+
+  animRAF = requestAnimationFrame(animFrame);
 }
 
 function updatePlayBtn(){
   const btn = document.getElementById('playBtn');
   if(!btn) return;
-  if(isPlaying){
-    btn.textContent = '⏸ 一時停止';
-    btn.classList.add('playing');
-  } else {
-    btn.textContent = '▶ 再生';
-    btn.classList.remove('playing');
-  }
+  if(isPlaying){ btn.textContent='⏸ 一時停止'; btn.classList.add('playing'); }
+  else         { btn.textContent='▶ 再生';      btn.classList.remove('playing'); }
 }
 
 function updateProgressBar(){
+  updateProgressBarRaw(currentSlot / (SLOTS.length - 1));
+}
+function updateProgressBarRaw(ratio){
   const bar = document.getElementById('playProgressBar');
-  if(!bar) return;
-  bar.style.width = (currentSlot / (SLOTS.length - 1) * 100) + '%';
+  if(bar) bar.style.width = (ratio * 100) + '%';
 }
 
 function scrubProgress(e){
-  const rect = e.currentTarget.getBoundingClientRect();
+  const rect  = e.currentTarget.getBoundingClientRect();
   const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  const slot = Math.round(ratio * (SLOTS.length - 1));
+  const slot  = Math.round(ratio * (SLOTS.length - 1));
   setSlot(slot);
 }
 
-function scheduleNext(){
-  const holdTime = Math.max(animSpeed - ANIM_TRANS, 100);
-  animTimer = setTimeout(()=>{
-    if(!isPlaying) return;
-    const next = currentSlot + 1;
-    if(next >= SLOTS.length){
-      pauseAnim();
-      return;
-    }
-    animateToSlot(next);
-  }, holdTime);
+// ============================================================
+// FACILITY (LOCATION) DETAILS
+// 食べログ等の公開情報を元にした石垣島の実在施設情報
+// ============================================================
+const LOC_DETAILS = {
+  port: {
+    name:'石垣漁港',       cat:'漁港・市場',  icon:'⚓', color:'#4a90d9',
+    genre:'水産物・生鮮市場',  price:'—',
+    hours:'早朝〜午前中（競り：6時頃）',
+    address:'石垣市新港町',
+    note:'石垣島最大の漁港。グルクン・カーエーなど南洋魚が水揚げされる。早朝の競りは地元民の日常風景。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  ferry: {
+    name:'離島ターミナル',  cat:'交通施設',    icon:'⛴️', color:'#4a90d9',
+    genre:'フェリー・観光案内', price:'—',
+    hours:'7:00〜20:00',
+    address:'石垣市美崎町1',
+    note:'西表島・竹富島・波照間島など八重山離島へのフェリーが発着。1Fに売店・2Fに展望デッキあり。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  market: {
+    name:'石垣市公設市場',  cat:'市場',        icon:'🏪', color:'#e67e22',
+    genre:'生鮮食品・惣菜・土産', price:'¥100〜',
+    hours:'8:00〜21:00（店舗により異なる）',
+    address:'石垣市大川208',
+    note:'地元の台所として親しまれる公設市場。2F食堂街では購入した食材を調理してもらえる「持込み調理」が名物。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%85%AC%E8%A8%AD%E5%B8%82%E5%A0%B4',
+  },
+  euglena: {
+    name:'ユーグレナモール',  cat:'ショッピング',  icon:'🛍️', color:'#9b59b6',
+    genre:'商店街・土産・雑貨', price:'¥500〜',
+    hours:'10:00〜21:00（店舗により異なる）',
+    address:'石垣市大川周辺',
+    note:'石垣島中心部のアーケード商店街。土産物・カフェ・雑貨店が連なる観光の中心地。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  soba: {
+    name:'島そば一番地',    cat:'食堂・そば',   icon:'🍜', color:'#e74c3c',
+    genre:'八重山そば・沖縄料理',  price:'¥700〜¥1,200',
+    rating: 3.6,
+    hours:'11:00〜売切終了（14:00頃）',
+    address:'石垣市大川270',
+    note:'石垣島を代表する島そばの名店。平打ち麺と豚だし・カツオだしのスープが特徴。早い時間に売り切れることも多い人気店。ソーキそばが一番人気。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%B3%B6%E3%81%9D%E3%81%B0',
+  },
+  hitoshi: {
+    name:'居酒屋ひとし',    cat:'居酒屋',       icon:'🍶', color:'#e74c3c',
+    genre:'居酒屋・沖縄料理',    price:'¥3,000〜¥5,000',
+    rating: 3.8,
+    hours:'18:00〜23:00（LO 22:30）',
+    address:'石垣市美崎町7-4',
+    note:'石垣島随一の人気居酒屋。八重山の新鮮な刺身盛りや島豆腐を使ったチャンプルーが絶品。予約必須の人気店。地元民・観光客ともに愛される。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%81%B2%E3%81%A8%E3%81%97',
+  },
+  cafe_yui: {
+    name:'Cafe & Bar Yui',  cat:'カフェ・バー',  icon:'☕', color:'#16a085',
+    genre:'カフェ・タコライス・バー', price:'¥800〜¥2,000',
+    rating: 3.5,
+    hours:'11:00〜14:30 / 18:00〜24:00',
+    address:'石垣市美崎町14',
+    note:'昼はタコライス・石垣牛バーガーなどランチ。夜はバーとしても営業。離島ターミナルから徒歩3分。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=Yui',
+  },
+  tacos: {
+    name:'タコス屋 QueRico', cat:'メキシコ料理', icon:'🌮', color:'#f39c12',
+    genre:'タコス・メキシコ料理',  price:'¥600〜¥1,500',
+    rating: 3.4,
+    hours:'11:00〜20:00（売切終了）',
+    address:'石垣市大川付近',
+    note:'石垣島でタコスといえばここ。もちもち皮のタコスにスパイシーな挽肉・チーズ・野菜がたっぷり。テイクアウト可能。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E3%82%BF%E3%82%B3%E3%82%B9',
+  },
+  gurukun: {
+    name:'居酒屋 珊瑚',     cat:'居酒屋',       icon:'🐟', color:'#e74c3c',
+    genre:'居酒屋・地元料理',    price:'¥2,500〜¥4,000',
+    rating: 3.5,
+    hours:'18:00〜翌1:00',
+    address:'石垣市大川付近',
+    note:'地元の漁師や建設業者が集う下町居酒屋。グルクン唐揚げ・もずく天ぷら・泡盛が充実。観光客より地元客が多く、リアルな島の雰囲気を味わえる。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E7%8F%8A%E7%91%9A',
+  },
+  market_din: {
+    name:'市場食堂',        cat:'食堂',         icon:'🍱', color:'#e67e22',
+    genre:'定食・沖縄料理',      price:'¥500〜¥1,000',
+    rating: 3.3,
+    hours:'8:00〜15:00',
+    address:'石垣市公設市場2F',
+    note:'公設市場2Fの食堂街。1Fで購入した鮮魚を持ち込み調理（500円〜）できる名物システムが人気。朝からにぎわう地元民の食事処。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/rstLst/?vs=1&sa=%E7%9F%B3%E5%9E%A3%E5%B8%82&vkeyword=%E5%B8%82%E5%A0%B4',
+  },
+  maxvalu: {
+    name:'マックスバリュ 石垣店', cat:'スーパー', icon:'🛒', color:'#27ae60',
+    genre:'スーパーマーケット',   price:'¥100〜',
+    hours:'7:00〜24:00',
+    address:'石垣市石垣3丁目付近',
+    note:'石垣島最大級のスーパー。島野菜・泡盛・地産地消の食材が揃う。観光客も旅の食材調達に利用。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  drugstore: {
+    name:'ドラッグストア',  cat:'薬局',         icon:'💊', color:'#3498db',
+    genre:'薬局・日用品',        price:'¥100〜',
+    hours:'9:00〜21:00',
+    address:'石垣市石垣',
+    note:'医薬品・化粧品・日用品を扱うドラッグストア。観光客の日焼け止め・常備薬需要も高い。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  souvenir: {
+    name:'お土産店 島宝',   cat:'土産物店',     icon:'🎁', color:'#9b59b6',
+    genre:'石垣島土産・雑貨',    price:'¥500〜¥5,000',
+    hours:'9:00〜21:00',
+    address:'石垣市美崎町付近',
+    note:'八重山みやげが揃う土産物店。石垣島の塩・黒糖・紅芋菓子・シーサー陶器など定番から限定品まで。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  beach: {
+    name:'真栄里ビーチ',    cat:'海水浴場・観光', icon:'🏖️', color:'#2980b9',
+    genre:'海水浴・シュノーケル', price:'無料',
+    hours:'遊泳可能期間：3月〜10月',
+    address:'石垣市真栄里',
+    note:'透明度の高いサンゴ礁のビーチ。シュノーケリングスポットとして地元民にも愛される穴場。川平湾より混雑が少なく、のんびり泳ぎたい人向け。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  hospital: {
+    name:'八重山病院',      cat:'医療施設',     icon:'🏥', color:'#e74c3c',
+    genre:'総合病院',            price:'—',
+    hours:'外来：8:30〜11:30',
+    address:'石垣市真栄里585-1',
+    note:'八重山諸島唯一の総合病院。島内外の住民の医療を担う。救急対応も24時間体制。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  city_hall: {
+    name:'石垣市役所',      cat:'行政施設',     icon:'🏛️', color:'#7f8c8d',
+    genre:'市役所・行政手続き',  price:'—',
+    hours:'8:30〜17:15（平日）',
+    address:'石垣市美崎町14',
+    note:'石垣市の行政の中心。観光振興・漁業支援・移住促進など多岐にわたる行政サービスを提供。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  famima: {
+    name:'ファミリーマート 石垣店', cat:'コンビニ', icon:'🏪', color:'#27ae60',
+    genre:'コンビニエンスストア',  price:'¥100〜',
+    hours:'24時間営業',
+    address:'石垣市登野城付近',
+    note:'24時間営業のコンビニ。離島ではコンビニの数が限られるため、地元民にとって重要な生活インフラ。ATMも設置。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  guesthouse: {
+    name:'ゲストハウス（登野城）', cat:'宿泊施設', icon:'🏠', color:'#8e44ad',
+    genre:'ゲストハウス・民宿',   price:'¥3,500〜¥5,000/泊',
+    hours:'チェックイン 15:00〜',
+    address:'石垣市登野城',
+    note:'移住者が経営する小規模ゲストハウス。ドミトリーから個室まで。地元情報を教えてもらえると口コミで評判。観光客と地元民の交流拠点にもなっている。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+  hotel: {
+    name:'ホテル（市内）',   cat:'宿泊施設',     icon:'🏨', color:'#8e44ad',
+    genre:'ビジネス・観光ホテル', price:'¥8,000〜¥20,000/泊',
+    hours:'チェックイン 15:00〜',
+    address:'石垣市市内',
+    note:'離島ターミナル・ユーグレナモール周辺に複数のホテルが集積。観光シーズンの稼働率は90%超。',
+    tabelog:'https://tabelog.com/okinawa/A4705/A470501/',
+  },
+};
+
+// category → icon color for the marker circle
+const CAT_COLOR = {
+  '食堂・そば':'#e74c3c', '居酒屋':'#c0392b', 'カフェ・バー':'#16a085',
+  'メキシコ料理':'#f39c12', '市場':'#e67e22', 'ショッピング':'#9b59b6',
+  'スーパー':'#27ae60', 'コンビニ':'#27ae60', '土産物店':'#8e44ad',
+  '漁港・市場':'#4a90d9', '交通施設':'#4a90d9', '宿泊施設':'#8e44ad',
+  '医療施設':'#e74c3c', '行政施設':'#7f8c8d', '海水浴場・観光':'#2980b9',
+  '薬局':'#3498db',
+};
+
+let facilityLayerVisible = false;
+const facilityMarkers = {};
+
+function buildFacilityPopup(key, det){
+  const stars = det.rating
+    ? '⭐'.repeat(Math.round(det.rating)) + ` <span style="color:#ffa657;font-weight:700">${det.rating}</span>`
+    : '';
+  return `
+    <div class="fac-popup">
+      <div class="fac-title">${det.icon} ${det.name}</div>
+      <div class="fac-cat">${det.cat} · ${det.genre}</div>
+      ${stars ? `<div class="fac-rating">${stars} <span style="font-size:10px;color:#8b949e">食べログ参考</span></div>` : ''}
+      <div class="fac-row">💰 ${det.price}</div>
+      <div class="fac-row">⏰ ${det.hours}</div>
+      <div class="fac-row">📍 ${det.address}</div>
+      <div class="fac-note">${det.note}</div>
+      <a href="${det.tabelog}" target="_blank" class="fac-link">🔍 食べログで検索</a>
+    </div>`;
 }
 
-function animateToSlot(targetSlot){
-  // Snapshot positions before changing slot
-  const fromPos = {};
-  AGENTS.forEach(a => { fromPos[a.id] = computePositionAtSlot(a, currentSlot); });
-  const toPos   = {};
-  AGENTS.forEach(a => { toPos[a.id]   = computePositionAtSlot(a, targetSlot); });
-
-  // Advance UI state immediately (timeline, list, detail)
-  currentSlot = targetSlot;
-  renderTimeline();
-  renderList();
-  renderDetail();
-  updateProgressBar();
-
-  const duration  = Math.min(ANIM_TRANS, animSpeed * 0.6);
-  const startTime = performance.now();
-  function ease(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t; }
-
-  function frame(now){
-    const t = Math.min((now - startTime) / duration, 1);
-    const e = ease(t);
-    AGENTS.forEach(a=>{
-      const mk = markers[a.id];
-      if(!mk) return;
-      const f = fromPos[a.id];
-      const d = toPos[a.id];
-      mk.setLatLng([f[0]+(d[0]-f[0])*e, f[1]+(d[1]-f[1])*e]);
+function createFacilityMarkers(){
+  Object.keys(LOC_DETAILS).forEach(key=>{
+    const loc = LOCS[key];
+    if(!loc) return;
+    const det = LOC_DETAILS[key];
+    const color = CAT_COLOR[det.cat] || '#58a6ff';
+    const icon = L.divIcon({
+      html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:2.5px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,.45);cursor:pointer">${det.icon}</div>`,
+      className:'', iconSize:[30,30], iconAnchor:[15,15]
     });
-    if(t < 1){
-      requestAnimationFrame(frame);
-    } else {
-      updateMapClean();          // finalize at correct positions
-      if(isPlaying) scheduleNext();
-    }
-  }
-  requestAnimationFrame(frame);
+    const mk = L.marker([loc.lat, loc.lng], {icon, zIndexOffset:-500})
+      .bindPopup(buildFacilityPopup(key, det), {
+        maxWidth: 280, className:'fac-popup-wrap'
+      });
+    mk.addTo(map);
+    facilityMarkers[key] = mk;
+  });
+}
+
+function destroyFacilityMarkers(){
+  Object.values(facilityMarkers).forEach(m => map.removeLayer(m));
+  Object.keys(facilityMarkers).forEach(k => delete facilityMarkers[k]);
+}
+
+function toggleFacilityLayer(show){
+  facilityLayerVisible = show;
+  if(show) createFacilityMarkers();
+  else     destroyFacilityMarkers();
 }
 
 // ============================================================
